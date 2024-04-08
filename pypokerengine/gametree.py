@@ -104,3 +104,38 @@ class LimitPokerTree:
             # Handle showdown logic here if we are currently in the 'river' round
             self.handle_showdown(parent_node, hole_cards, community_cards)
 
+    def evaluate_and_propagate(self, node):
+        # Base case: if this is a terminal node, evaluate it directly
+        if self.is_terminal(node):
+            node.score = self.evaluate_node(node)
+            return node.score
+
+        # If this is a decision node for the agent, choose the action that maximizes score
+        if node.player == 'my_player':
+            best_score = float('-inf')
+            for child in node.children:
+                child_score = self.evaluate_and_propagate(child)
+                best_score = max(best_score, child_score)
+            node.score = best_score
+            return best_score
+
+        # If this is a decision node for the opponent, assume they choose the action that minimizes your score
+        else:
+            worst_score = float('inf')
+            for child in node.children:
+                child_score = self.evaluate_and_propagate(child)
+                worst_score = min(worst_score, child_score)
+            node.score = worst_score
+            return worst_score
+
+    def evaluate_node(self, node):
+        # Evaluate the strength of the hand at the terminal node and return its score
+        # Placeholder for actual hand evaluation
+        return 0  # Replace with actual evaluation logic
+
+    def is_terminal(self, node):
+        # Determine if the node is a terminal node
+        # Placeholder for actual terminal node check
+        return not node.children  # In a real game, you'd also check if the hand is complete
+
+
