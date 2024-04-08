@@ -88,22 +88,6 @@ class LimitPokerTree:
             self.process_player_decision(community_node, self.my_hole_cards, community_cards, 'showdown')
 
 
-    def process_player_decision(self, parent_node, hole_cards, community_cards, next_round_name):
-        # Generate possible actions for a player: check, call, bet, fold
-        # Depending on the current round and the state of the game
-        # ...
-
-        # After all actions have been added to the parent_node, check for the next round
-        if next_round_name == 'turn':
-            # Deal the 'turn' card if we are currently in the 'flop' round
-            self.deal_community_cards(parent_node, 1, hole_cards + community_cards, 'turn')
-        elif next_round_name == 'river':
-            # Deal the 'river' card if we are currently in the 'turn' round
-            self.deal_community_cards(parent_node, 1, hole_cards + community_cards, 'river')
-        elif next_round_name == 'showdown':
-            # Handle showdown logic here if we are currently in the 'river' round
-            self.handle_showdown(parent_node, hole_cards, community_cards)
-
     def evaluate_and_propagate(self, node):
         # Base case: if this is a terminal node, evaluate it directly
         if self.is_terminal(node):
