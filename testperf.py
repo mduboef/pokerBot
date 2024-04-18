@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 
 """ =========== *Remember to import your agent!!! =========== """
 from randomplayer import RandomPlayer
+from pomcp_player import POMCPPlayer
 # from smartwarrior import SmartWarrior
 """ ========================================================= """
 
@@ -20,7 +21,7 @@ $ python testperf.py -n1 "Random Warrior 1" -a1 RandomPlayer -n2 "Random Warrior
 def testperf(agent_name1, agent1, agent_name2, agent2):		
 
 	# Init to play 500 games of 1000 rounds
-	num_game = 500
+	num_game = 10
 	max_round = 1000
 	initial_stack = 10000
 	smallblind_amount = 20
@@ -61,13 +62,13 @@ def testperf(agent_name1, agent1, agent_name2, agent2):
 		print("\n Congratulations! " + agent_name1 + " has won.")
 		# print("\n Random Player has won!")
 	else:
-		Print("\n It's a draw!") 
+		print("\n It's a draw!") 
 
 
 def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('-n1', '--agent_name1', help="Name of agent 1", default="Your agent", type=str)
-    parser.add_argument('-a1', '--agent1', help="Agent 1", default=RandomPlayer())    
+    parser.add_argument('-a1', '--agent1', help="Agent 1", default=POMCPPlayer())    
     parser.add_argument('-n2', '--agent_name2', help="Name of agent 2", default="Your agent", type=str)
     parser.add_argument('-a2', '--agent2', help="Agent 2", default=RandomPlayer())    
     args = parser.parse_args()
