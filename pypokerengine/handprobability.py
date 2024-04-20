@@ -166,15 +166,52 @@ def checkPair(processedCards):
 def checkHigh(processedCards):
     return True
 
-if __name__ == '__main__':
-    deck = generateDeck(SUIT, CARD, ['C4', 'D2'], [])
+def handDistribution(SUIT, CARD, holeCards, commCards, n, myDict):
+    knownCards = [i for i in holeCards]
+    for card in commCards:
+        knownCards.append(card)
+    knownCardsKey = tuple(knownCards)
+    if knownCardsKey in myDict.keys():
+        return myDict
+    royalFlush = 0
+    straightFlush = 0
+    fourKind = 0
+    fullHouse = 0
+    flush = 0
+    straight = 0
+    threeKind = 0
+    twoPair = 0
+    pair = 0
+    high = 0
+    deck = generateDeck(SUIT, CARD, holeCards, commCards)
     
-    count = 0
-    totalFlush = 0
-    while totalFlush < 11:
-        count += 1
-        sample = processCards(sampleDeck(deck, []))
-        if checkFullHouse(sample) is True:
-            totalFlush += 1
-            print(sample)
-    print(count)
+    for _ in range(n):
+        sample = processCards(sampleDeck(deck, knownCards))
+        if checkRoyalFlush(sample) is True:
+            royalFlush += 1
+        elif checkStraightFlush(sample) is True:
+            straightFlush += 1
+        elif checkFourKind(sample) is True:
+            fourKind += 1
+        elif checkFullHouse(sample) is True:
+            fullHouse += 1
+        elif checkFlush(sample) is True:
+            flush += 1
+        elif checkStraight(sample) is True:
+            straight += 1
+        elif checkThreeKind(sample) is True:
+            threeKind += 1
+        elif checkTwoPair(sample) is True:
+            twoPair += 1
+        elif checkPair(sample) is True:
+            pair += 1
+        elif checkHigh(sample) is True:
+            high += 1
+    myDict.update({knownCardsKey:{'Royal Flush':royalFlush/n, 'Straight Flush':straightFlush/n, 'Four Kind':fourKind/n, 'Full House':fullHouse/n, 'Flush':flush/n, 'Straight':straight/n, 'Three Kind':threeKind/n, 'Two Pair':twoPair/n, 'Pair':pair/n, 'High':high/n}})
+    return myDict
+
+if __name__ == '__main__':
+    dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 100000, {})
+    print(dict)
+    dict = handDistribution(SUIT, CARD, ['CA', 'H7'], [], 100000, dict)
+    print(dict)
