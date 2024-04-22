@@ -97,12 +97,12 @@ class LimitPokerTree:
     
         return self.root
     
-    # TODO: Check terminal with node history
+    # Recursively generate a sub-tree tree from a given node
     def generate_children(self, parent_node):
 
         # Generate possible actions for a player: fold, call, raise (if raises are left)
         actions = ['fold', 'call']
-        if parent_node.raise_count <= self.MAX_RAISES:
+        if parent_node.raise_count < self.MAX_RAISES:
             actions.append('raise')
 
         for action in actions:
@@ -139,7 +139,7 @@ class LimitPokerTree:
     
     # Determines if a history array has terminated
     def is_terminal_history(self, history):
-        if (len(history) == 2 and history[0] == 'call' and history[1] == 'call') or (len(history) and history[-1] == 'fold') or(history[-1] == 'call'):
+        if (len(history) > 1 and history[-1] == 'call') or (len(history) and history[-1] == 'fold'):
             return True
         return False
     
@@ -151,9 +151,7 @@ class LimitPokerTree:
         return sum(map(self.recursive_children_count, node.children)) + 1
 
 
-tree = LimitPokerTree(['AH', 'JC'], [], ['raise'], 0)
+tree = LimitPokerTree(['AH', 'JC'], [], [], 0)
 tree.build_tree()
 print(tree.starting_player, tree.current_pot)
 print(tree.recursive_children_count(tree.root))
-
-sys.exit(0)
