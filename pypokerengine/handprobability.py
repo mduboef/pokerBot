@@ -187,15 +187,20 @@ def handDistribution(SUIT, CARD, holeCards, commCards, n, myDict):
     
     for _ in range(n):
         sample = processCards(sampleDeck(deck, knownCards))
-        if checkRoyalFlush(sample) is True:
-            royalFlush += 1
-        elif checkStraightFlush(sample) is True:
-            straightFlush += 1
+        isFlush = False
+        if checkFlush(sample) is True:
+            if checkStraightFlush(sample) is True:
+                if checkRoyalFlush(sample) is True:
+                    royalFlush += 1
+                else:
+                    straightFlush += 1
+            else:
+                isFlush = True
         elif checkFourKind(sample) is True:
             fourKind += 1
         elif checkFullHouse(sample) is True:
             fullHouse += 1
-        elif checkFlush(sample) is True:
+        elif isFlush is True:
             flush += 1
         elif checkStraight(sample) is True:
             straight += 1
@@ -205,13 +210,18 @@ def handDistribution(SUIT, CARD, holeCards, commCards, n, myDict):
             twoPair += 1
         elif checkPair(sample) is True:
             pair += 1
-        elif checkHigh(sample) is True:
+        else:
             high += 1
     myDict.update({knownCardsKey:{'Royal Flush':royalFlush/n, 'Straight Flush':straightFlush/n, 'Four Kind':fourKind/n, 'Full House':fullHouse/n, 'Flush':flush/n, 'Straight':straight/n, 'Three Kind':threeKind/n, 'Two Pair':twoPair/n, 'Pair':pair/n, 'High':high/n}})
     return myDict
 
 if __name__ == '__main__':
-    dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 100000, {})
-    print(dict)
-    dict = handDistribution(SUIT, CARD, ['CA', 'H7'], [], 100000, dict)
-    print(dict)
+    for i in range(1):
+        dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 5000, {})
+        print(dict)
+    #dict = handDistribution(SUIT, CARD, ['CA', 'H7'], [], 100000, dict)
+    #print(dict)
+    #probSum = 0
+    #for key in dict[('C6', 'DK')].keys():
+    #    probSum += dict[('C6', 'DK')][key]
+    #print(probSum)
