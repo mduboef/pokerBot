@@ -1,7 +1,5 @@
 import itertools
 import random
-import sys
-import timeit
 
 class BettingNode:
     def __init__(self,
@@ -196,7 +194,7 @@ class LimitPokerTree:
     
     # Determines if a history array has terminated
     def is_terminal_history(self, history):
-        # Call is terminal if it is not the first move made. Fold always terminates
+        # Call is terminal if it is not the first move made. Fold always terminates. Raise never terminates
         if (len(history) > 1 and history[-1] == 'call') or (len(history) and history[-1] == 'fold'):
             return True
         return False
@@ -214,6 +212,6 @@ class LimitPokerTree:
         return sum(map(self.recursive_children_count, node.children)) + 1
 
 # Test tree generation
-tree = LimitPokerTree(['AH', 'JC'], [], [], 30)
-tree.build_tree()
-print(tree.recursive_children_count(tree.root))
+# tree = LimitPokerTree(['AH', 'JC'], [], [], 30)
+# tree.build_tree()
+# print(tree.recursive_children_count(tree.root))
