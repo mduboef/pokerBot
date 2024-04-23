@@ -1,4 +1,6 @@
 import random as rand
+import handprobabilityoptimization as optimization
+import time
 
 SUIT = ['C', 'D', 'H', 'S']
 CARD = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
@@ -167,6 +169,7 @@ def checkHigh(processedCards):
     return True
 
 def handDistribution(SUIT, CARD, holeCards, commCards, n, myDict):
+    startTime = time.time()
     knownCards = [i for i in holeCards]
     for card in commCards:
         knownCards.append(card)
@@ -213,15 +216,10 @@ def handDistribution(SUIT, CARD, holeCards, commCards, n, myDict):
         else:
             high += 1
     myDict.update({knownCardsKey:{'Royal Flush':royalFlush/n, 'Straight Flush':straightFlush/n, 'Four Kind':fourKind/n, 'Full House':fullHouse/n, 'Flush':flush/n, 'Straight':straight/n, 'Three Kind':threeKind/n, 'Two Pair':twoPair/n, 'Pair':pair/n, 'High':high/n}})
+    print("RUNTIME (OLD): ", time.time() - startTime)
     return myDict
 
 if __name__ == '__main__':
     for i in range(1):
-        dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 5000, {})
+        dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 10000, {})
         print(dict)
-    #dict = handDistribution(SUIT, CARD, ['CA', 'H7'], [], 100000, dict)
-    #print(dict)
-    #probSum = 0
-    #for key in dict[('C6', 'DK')].keys():
-    #    probSum += dict[('C6', 'DK')][key]
-    #print(probSum)
