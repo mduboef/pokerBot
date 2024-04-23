@@ -14,10 +14,9 @@ def generateDeck(suit, card, holeCards, commCards):
     return deck
 
 def sampleDeck(deck, knownCards):
-    sample = [i for i in knownCards]
+    sample = [*knownCards]
     revieledCards = rand.sample(deck, 7 - len(knownCards))
-    for card in revieledCards:
-        sample.append(card)
+    sample += revieledCards
     return sample
 
 def sortCards(cards):
@@ -152,9 +151,8 @@ def checkHigh(processedCards):
 
 def handDistribution(SUIT, CARD, holeCards, commCards, n, myDict):
     startTime = time.time()
-    knownCards = [i for i in holeCards]
-    for card in commCards:
-        knownCards.append(card)
+    knownCards = [*holeCards]
+    knownCards += commCards
     knownCardsKey = tuple(knownCards)
     if knownCardsKey in myDict.keys():
         return myDict
