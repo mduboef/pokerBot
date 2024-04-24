@@ -56,6 +56,7 @@ def checkRoyalFlush(cardData):
         # the royal flush is on the right
         if len(cardData[suit]) > 4 and cardData[suit][-5] == 8 and cardData[suit][-1] == 12:
             return True
+        # TOODOO HERE CHECK IF IT BREAKS OR ADD MORE IF STATEMENTS
     return False
 
 # Checks if a set of cards contains a straight flush
@@ -89,9 +90,11 @@ def checkFullHouse(cardData):
 
 # Checks if a set of cards contains a flush
 def checkFlush(cardData):
-    for suit in SUIT:
-        if len(cardData[suit]) > 4:
-            return True
+    #for suit in SUIT:
+    #    if len(cardData[suit]) > 4:
+    #        return True
+    if len(cardData['C']) > 4 or len(cardData['D']) > 4 or len(cardData['H']) > 4 or len(cardData['S']) > 4:
+        return True
     return False
 
 # Checks if a set of cards contains a straight
@@ -200,10 +203,13 @@ def handDistribution(suit, card, hole, community, ms_limit):
                     'community': community, # Same with community cards
                     'iterations': iters, # Return iteration count to get how effective it was
                     'with_hole': results}
-
+    print(iters)
     return return_obj
 
 if __name__ == '__main__':
     for i in range(1):
-        dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 50)
-        print(dict)
+        t = timeit.timeit(lambda: handDistribution(SUIT, CARD, ['C6', 'DK'], [], 50), number=1, globals=globals())
+        print(t)
+        
+        #dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 50)
+        #print(dict)
