@@ -9,8 +9,10 @@
 # 5. This one is not listed in the instruction but also should be considered: how much money the opponent have (sum to 20000)
 
 # Simple implementation using Monte Carlo Sampling
-
-# QUESTION: is the next state solely determined by the current state and the action taken?
+# Argument: the opponent will determine its next move based on the 5 states and
+# They may also make their action based on the history, which is basically taking our player's action into consideration
+# To take this part into account we would be basically predicting how the opponent predicts our action, which is nested
+# We can probably ignore the history for now.
 
 GUESS_PROB = 1/3
 # Each state maintains a set of probabilities of transitioning to other states
@@ -62,7 +64,6 @@ class OpponentAction:
     WINNING = 16667
     # interval 6
     def __init__(self):
-        self.valid_actions = ['fold', 'call', 'raise']
         self.last_action = None
         self.states = {} # Could integrate State into OpponentAction to use less memory, though this provides modularity
         # states = {
@@ -110,3 +111,6 @@ class OpponentAction:
             cur_state = self.states[(hole_cards, community_cards, betted, pocket_level)]
             return cur_state.get_probability(action)
     
+# How to use: initiate an OpponentAction object at the start of the game, 
+# call OpponentAction.update every time the opponent makes a move
+# call predict when needing to know the probability of the next move
