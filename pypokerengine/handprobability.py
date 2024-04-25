@@ -106,7 +106,7 @@ def checkStraight(cardData):
             return True
     return False
 
-def handDistribution(suit, card, hole, community, ms_limit):
+def handDistribution(hole, community, ms_limit, iter_limit=1000000, suit=SUIT, card=CARD):
     # Track total time taken to run the script
     start = timeit.default_timer()
 
@@ -183,8 +183,8 @@ def handDistribution(suit, card, hole, community, ms_limit):
         # Track iterations
         iters += 1
 
-        # Always finish at the end if over-time
-        if timeit.default_timer() - start > ms_limit / 1000:
+        # Always finish at the end if over-time or over limit of simulations
+        if timeit.default_timer() - start > ms_limit / 1000 or iter_limit < iters:
             break
     
     # Average the results to get a full distribution
@@ -208,7 +208,7 @@ def handDistribution(suit, card, hole, community, ms_limit):
 
 if __name__ == '__main__':
     for i in range(1):
-        t = timeit.timeit(lambda: handDistribution(SUIT, CARD, ['C6', 'DK'], [], 50), number=1, globals=globals())
+        t = timeit.timeit(lambda: handDistribution(['C6', 'DK'], [], 50), number=1, globals=globals())
         print(t)
         
         #dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 50)
