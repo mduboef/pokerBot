@@ -48,38 +48,25 @@ class State:
             return self.transition_dict[action] / self.seen_times
 
 class OpponentAction:
-    # Divide the total money in 6 intervals
-    # interval 1
-    LOSING = 3334
-    # interval 2
-    LOW = 6667
-    # interval 3
-    EVEN = 10000
-    # interval 4
-    HIGH = 13334
-    # interval 5
-    WINNING = 16667
-    # interval 6
     def __init__(self):
         self.states = {} # Could integrate State into OpponentAction to use less memory, though this provides modularity
         # states = {
         #     "(hole_cards, community_cards, betted, opponent_pocket_level)": State
         # }
-    
+
+    # Divide the total money in 5 intervals
     def __calc_opponent_pocket_level(self, opponent_pocket):
         opponent_pocket_level = 0
-        if opponent_pocket < self.LOSING:
-            opponent_pocket_level = 1
-        elif opponent_pocket < self.LOW:
-            opponent_pocket_level = 2
-        elif opponent_pocket < self.EVEN:
-            opponent_pocket_level = 3
-        elif opponent_pocket < self.HIGH:
-            opponent_pocket_level = 4
-        elif opponent_pocket < self.WINNING:
-            opponent_pocket_level = 5
-        elif opponent_pocket >= self.WINNING:
-            opponent_pocket_level = 6
+        if opponent_pocket >= 0 and opponent_pocket < 3334:
+            opponent_pocket_level = 'LOSING'
+        elif opponent_pocket < 6667:
+            opponent_pocket_level = 'LOW'
+        elif opponent_pocket < 13334:
+            opponent_pocket_level = 'EVEN'
+        elif opponent_pocket < 16667:
+            opponent_pocket_level = 'HIGH'
+        elif opponent_pocket >= 16667 and opponent_pocket <= 20000:
+            opponent_pocket_level = 'WINNING'
         else: print('invalid opponent_pocket')
         return opponent_pocket_level
     
