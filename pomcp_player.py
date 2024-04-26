@@ -6,6 +6,12 @@ import pprint
 class POMCPPlayer(BasePokerPlayer):
 
   def declare_action(self, valid_actions, hole_card, round_state):
+    # TODO: This is where pomcp policy will be
+    # What is uuid?
+    # What exactly is stack? the players' amount or players amount betted or is that pot?
+    # what is dealer_btn?
+    # what is next_player?
+    
     pp = pprint.PrettyPrinter(indent=2)
     print("------------ROUND_STATE(RANDOM)--------")
     pp.pprint(round_state)

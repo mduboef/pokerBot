@@ -41,7 +41,7 @@ class POMCP(Agent):
         self.explore = explore
         self.n_particles = n_particles
         self.reinvigoration = reinvigoration
-        self.rollout_policy = DealerAgent()
+        self.rollout_policy = DealerAgent() # TODO: Needs changing
 
 
     def __str__(self):
@@ -49,6 +49,7 @@ class POMCP(Agent):
 
 
     def policy(self, obs, ctx):
+        # This is the policy to be used given an observation after filling the Search tree with POMCP
         tree = ctx.get('pomcp_root')
 
         at_root = tree is None
@@ -77,7 +78,6 @@ class POMCP(Agent):
         if self.discount**depth < self.epsilon:
             return 0
         if len(tree.children) == 0:
-
             tree.expand()
             return self.rollout(part, depth)
         actions = part.s.actions()
@@ -103,7 +103,7 @@ class POMCP(Agent):
             return 0
         if len(part.s.actions()) == 0:
             return 0
-        action = self.rollout_policy.policy(part.obs, {})
+        action = self.rollout_policy.policy(part.obs, {}) # TODO: Needs changing
         new_s = part.s.sample(action)
         new_part = Particle.from_s(new_s)
         return new_s.score() + self.discount * self.rollout(new_part, depth + 1)
