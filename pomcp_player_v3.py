@@ -76,10 +76,13 @@ class POMCPPlayer(BasePokerPlayer):
         else:
             particles = [part for part in tree.particles if part.obs == obs]
             for _ in range(self.reinvigoration):
+                # Use particle reinvigoration by adding particles with noise 
+                # uniform sample from possible states given current observation
                 particles.append(Particle.from_obs(obs))
             tree.particles = particles
 
         for _ in particles:
+            # Take random sample from particles in 
             particle = random.sample(tree.particles, 1)[0]
             self.simulate(particle, tree, 0, valid_actions)
 
@@ -91,13 +94,14 @@ class POMCPPlayer(BasePokerPlayer):
     # I don't think so (e.g., small blind, big blind?). Let's verify this.
     def simulate(self, particle, tree, depth, valid_actions):
         """
-        Simulations are performed using the PO-UCT Algorithm
+        Simulation performed using the PO-UCT Algorithm
         """
         if self.discount**depth < self.epsilon:
             return 0
         if depth >= self.max_depth:
             return 0  # Terminal depth reached
-        # TODO: Make sure this is valid
+
+        # Since expand(), exands the tree for all actions we just need to check if the tree/node has children
         if not tree.children:
             tree.expand(valid_actions)  # Assuming valid_actions is accessible
             return self.rollout(particle, depth)
@@ -106,13 +110,19 @@ class POMCPPlayer(BasePokerPlayer):
         actions = valid_actions
 
         children = filter(lambda child: child.action in actions, tree.children)
+        # Upper Confidence Bound (UCB) update
         child = max(children, key=lambda child: child.value + self.explore * tree.ucb(child))
+        # Argmax
         action = child.action
 
-        tree.visit += 1
-        selected_action.visit += 1
-        selected_action.value += (reward - selected_action.value) / selected_action.visit
+        new_s = particle.s.sample(action)
+        new_part = Particle.from_s(new_s)
+        reward = new_s.score() + self.discount * self.simulate(new_part, child, depth + 1)
+        tree.particles.append(new_part)
 
+        tree.visit += 1
+        child.visit += 1
+        child.value += (reward - child.value) / child.visit
         return reward
 
     def rollout(self, particle, depth):
