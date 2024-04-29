@@ -9,7 +9,8 @@ from argparse import ArgumentParser
 
 """ =========== *Remember to import your agent!!! =========== """
 from randomplayer import RandomPlayer
-from pomcp_player_v3 import POMCPPlayer
+# from pomcp_player_v3 import POMCPPlayer
+from pomcp_player import POMCPPlayer
 # from smartwarrior import SmartWarrior
 """ ========================================================= """
 

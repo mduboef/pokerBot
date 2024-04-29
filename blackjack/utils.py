@@ -2,69 +2,48 @@ import random
 
 #TODO: Think about ways to make this smarter like configuring the random distributions away from random uniform across all potential values (e.g., skewed gaussian)
 
-# Define suits, ranks, and generate the full deck of cards
-suits = ['C', 'D', 'H', 'S']  # Clubs, Diamonds, Hearts, Spades
-ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-deck = [f"{suit}{rank}" for rank in ranks for suit in suits]
+class Observation:
+    def __init__(self, hole_card: list[str], round_state: dict) -> None:
+        self.hole_card = hole_card
+        self.community_card = round_state['community_card']
+        self.round_state = round_state
 
-# Define maximum pot and rounds (as string for easy formatting)
-max_pot = 99999 # TODO: probably less
-max_rounds = 99999 # TODO: probably less
+    def _gen_op_hole_cards(self):
+      hole_card = self.hole_card
+      community_card = self.community_card
+      # Define suits, ranks, and generate the full deck of cards
+      suits = ['C', 'D', 'H', 'S']  # Clubs, Diamonds, Hearts, Spades
+      ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+      deck = [f"{suit}{rank}" for rank in ranks for suit in suits]
 
-# Function to randomly select exactly two cards for each player
-def get_two_cards():
-    selected_cards = random.sample(deck, 2)
-    return selected_cards
+      # Remove known cards from deck (hole cards of player 1 and visible community cards)
+      known_cards = hole_card + [card for card in community_card]
+      remaining_deck = [card for card in deck if card not in known_cards]
 
-# Function to generate a random game state
-def generate_random_game_state() -> str:
-    # Randomly select the number of community cards between 2 and 5
-    num_community_cards = random.randint(2, 5)
-    community_cards = random.sample(deck, num_community_cards)
-    # Fill the remaining card slots with "00" up to 5 cards
-    community_cards += ['00'] * (5 - num_community_cards)
+      # Generate possible hole cards for player 2 from the remaining deck
+      return random.sample(remaining_deck, 2)
     
-    remaining_deck = list(set(deck) - set(community_cards))
-
-    # Randomly select two hole cards for each player from the remaining deck
-    player1_cards = random.sample(remaining_deck, 2)
-    remaining_deck = list(set(remaining_deck) - set(player1_cards))
-    player2_cards = random.sample(remaining_deck, 2)
-
-    # Randomly select pot and round numbers, and format them
-    pot = random.randint(1, max_pot)
-    rounds = random.randint(1, max_rounds)
-
-    # Combine all parts into the final encoded string
-    game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join(player2_cards)}"
-    return game_state
-
-
-def generate_random_game_observation() -> str:
-    # Randomly select the number of community cards between 2 and 5
-    num_community_cards = random.randint(2, 5)
-    community_cards = random.sample(deck, num_community_cards)
-    # Fill the remaining card slots with "00" up to 5 cards
-    community_cards += ['00'] * (5 - num_community_cards)
+    def sample_state(self):
+        """
+        Samples random state given observation
+        """
+        return State(self.hole_card, self._gen_op_hole_cards(), self.round_state)
     
-    remaining_deck = list(set(deck) - set(community_cards))
+class State:
+    def __init__(self, hole_card_main: list[str], hole_card_op: list[str], round_state: dict) -> None:
+        self.hole_card_main = hole_card_main
+        self.hole_card_op = hole_card_op
+        self.community_card = round_state['community_card']
+        self.round_state = round_state
+    
+    def get_observation(self):
+        return Observation(self.hole_card_main, self.round_state)
 
-    # Randomly select two hole cards for each player from the remaining deck
-    player1_cards = random.sample(remaining_deck, 2)
-    remaining_deck = list(set(remaining_deck) - set(player1_cards))
-    player2_cards = random.sample(remaining_deck, 2)
 
-    # Randomly select pot and round numbers, and format them
-    pot = random.randint(1, max_pot)
-    rounds = random.randint(1, max_rounds)
-
-    # Combine all parts into the final encoded string
-    game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join("0000")}"
-    return game_state
-
-def game_state_to_str(round_state: dict, hole_card_player_1: list, hole_card_player_2: list) -> str:
+# Function to generate a random game state given current observation
+def generate_random_game_state(round_state, hole_card: list) -> str:
     """
-    Outputs the same format from generate_random_game_observation() and generate_random_game_state()
+        Outputs the same format from generate_random_game_observation() and generate_random_game_state()
     Input is of the format:
     { 'action_histories': { 'flop': [ { 'action': 'RAISE',
                                     'add_amount': 40,
@@ -124,14 +103,47 @@ def game_state_to_str(round_state: dict, hole_card_player_1: list, hole_card_pla
     'small_blind_pos': 0,
     'street': 'river'}
     """
-    community_cards = round_state['community_card'].join("")
-    pot = str(round_state['pot']['main']['amount']).zfill(5)
-    rounds = str(round_state['round_count']).zfill(5)
-    hole_card_player_1 = hole_card_player_1.join("")
-    hole_card_player_2 = hole_card_player_2.join("")
-    game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(hole_card_player_1)}|{''.join(hole_card_player_2)}"
     
+    # Define suits, ranks, and generate the full deck of cards
+    suits = ['C', 'D', 'H', 'S']  # Clubs, Diamonds, Hearts, Spades
+    ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+    deck = [f"{suit}{rank}" for rank in ranks for suit in suits]
+
+    # Extract community cards and ensure there are always 5 cards, filled with "00" if fewer
+    community_cards = round_state['community_card'] + ['00'] * (5 - len(round_state['community_card']))
+
+    # Remove known cards from deck (hole cards of player 1 and visible community cards)
+    known_cards = hole_card + [card for card in round_state['community_card'] if card != '00']
+    remaining_deck = [card for card in deck if card not in known_cards]
+
+    # Extract the pot amount from the main pot
+    pot = round_state['pot']['main']['amount']
+    # Extract the current round count
+    rounds = round_state['round_count']
+    player1_cards = hole_card
+    # Generate possible hole cards for player 2 from the remaining deck
+    player2_cards = random.sample(remaining_deck, 2)
+
+    # Combine all parts into the final encoded string
+    game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join(player2_cards)}"
+    return game_state
+
+def to_game_observation(round_state: dict, hole_card: list) -> str:
+    # Extract community cards and ensure there are always 5 cards, filled with "00" if fewer
+    community_cards = round_state['community_card'] + ['00'] * (5 - len(round_state['community_card']))
+    
+    # Extract the pot amount from the main pot
+    pot = round_state['pot']['main']['amount']
+    
+    # Extract the current round count
+    rounds = round_state['round_count']
+    
+    player1_cards = hole_card
+    player2_cards = ['00', '00']  # Placeholder since actual cards are unknown
+    
+    # Combine all parts into the final encoded string
+    game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join(player2_cards)}"
     return game_state
 
 if __name__ == "__main__":
-    print(generate_random_game_observation())
+    print(generate_random_game_state())
