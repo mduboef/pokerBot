@@ -18,6 +18,8 @@ class POMCPPlayer(BasePokerPlayer):
     pp.pprint(hole_card)
     print("------------VALID_ACTIONS----------")
     pp.pprint(valid_actions)
+    if len(valid_actions) < 3:
+      exit()
     print("-------------------------------")
     game_state = restore_game_state(round_state)
     print(game_state)

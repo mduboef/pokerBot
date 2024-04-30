@@ -9,19 +9,19 @@ class Observation:
         self.round_state = round_state
 
     def _gen_op_hole_cards(self):
-      hole_card = self.hole_card
-      community_card = self.community_card
-      # Define suits, ranks, and generate the full deck of cards
-      suits = ['C', 'D', 'H', 'S']  # Clubs, Diamonds, Hearts, Spades
-      ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-      deck = [f"{suit}{rank}" for rank in ranks for suit in suits]
+        hole_card = self.hole_card
+        community_card = self.community_card
+        # Define suits, ranks, and generate the full deck of cards
+        suits = ['C', 'D', 'H', 'S']  # Clubs, Diamonds, Hearts, Spades
+        ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
+        deck = [f"{suit}{rank}" for rank in ranks for suit in suits]
 
-      # Remove known cards from deck (hole cards of player 1 and visible community cards)
-      known_cards = hole_card + [card for card in community_card]
-      remaining_deck = [card for card in deck if card not in known_cards]
+        # Remove known cards from deck (hole cards of player 1 and visible community cards)
+        known_cards = hole_card + [card for card in community_card]
+        remaining_deck = [card for card in deck if card not in known_cards]
 
-      # Generate possible hole cards for player 2 from the remaining deck
-      return random.sample(remaining_deck, 2)
+        # Generate possible hole cards for player 2 from the remaining deck
+        return random.sample(remaining_deck, 2)
     
     def sample_state(self):
         """
@@ -38,7 +38,30 @@ class State:
     
     def get_observation(self):
         return Observation(self.hole_card_main, self.round_state)
+    
+    @classmethod
+    def from_game_state(cls, game_state: dict, hole_card_main: list[str], hole_card_op: list[str]):
+        return cls(hole_card_main, hole_card_op, game_state['round_state']['community_card'], game_state['round_state'])
 
+def get_current_player_id(round_state):
+    return round_state['next_player']
+
+def calculate_valid_actions(round_state, player_id):
+    current_player = round_state['seats'][player_id]
+    current_stack = current_player['stack']
+    current_call_amount = round_state['call_amount']
+    min_raise, max_raise = round_state['min_raise'], round_state['max_raise']
+
+    actions = []
+    actions.append({'action': 'fold'})
+
+    if current_call_amount > 0:
+        if current_stack >= current_call_amount:
+            actions.append({'action': 'call'})
+        if current_stack >= min_raise:
+            actions.append({'action': 'raise'})
+
+    return actions
 
 # Function to generate a random game state given current observation
 def generate_random_game_state(round_state, hole_card: list) -> str:
@@ -144,6 +167,24 @@ def to_game_observation(round_state: dict, hole_card: list) -> str:
     # Combine all parts into the final encoded string
     game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join(player2_cards)}"
     return game_state
+
+# def eval_hole_cards(hole_card):
+#     score = 0
+#     card_1, card_2 = hole_card[0], hole_card[1]
+#     is_same_suit = card_1[0] == card_2[0]
+#     is_pair = card_1[1] == card_2[1]
+#     is_ace = card_1[1] == 'A' or card_2[1] == 'A'
+
+#     is_high_pair = is_pair and (card_1[1] == 'A' or card_1[1] == 'K' or card_1[1] == 'Q')
+#     is_mid_pair = is_pair and (card_1[1] == 'J' or card_1[1] == 'T')
+#     if is_high_pair:
+#         score += 10
+#     elif is_mid_pair:
+#         score += 9
+#     elif is_pair:
+#         score += 8
+    
+
 
 if __name__ == "__main__":
     print(generate_random_game_state())
