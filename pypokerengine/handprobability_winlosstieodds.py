@@ -269,8 +269,9 @@ def handDistribution(hole, community, ms_limit):
     
     return return_obj
 
-def getWinLossTieOdds(handDict, iters):
-    oppHand = handDistribution(handDict['community'], [], 50)
+def getWinLossTieOdds(hole, community, ms_limit, iters):
+    handDict = handDistribution(hole, community, ms_limit/2)
+    oppHand = handDistribution(handDict['community'], [], ms_limit/2)
     oppHandList = [oppHand['with_hole'][key] for key in oppHand['with_hole'].keys()]
     oppHandList.reverse()
     playerHandList = [handDict['with_hole'][key] for key in handDict['with_hole'].keys()]
@@ -285,8 +286,6 @@ def getWinLossTieOdds(handDict, iters):
     playerWins = 0
     playerLosses = 0
     playerTies = 0
-    # print("MY HAND: ", playerHandList)
-    # print("OP HAND: ", oppHandList)
     for _ in range(iters):
         sample = random.uniform(0,1)
         playerIndex = 0
@@ -305,13 +304,9 @@ def getWinLossTieOdds(handDict, iters):
             playerLosses += 1
         if oppIndex == playerIndex:
             playerTies += 1
-    # print(playerWins)
-    # print(playerLosses)
-    # print(playerTies)
 
     toReturn = (playerWins/iters, playerLosses/iters, playerTies/iters)
     handDict.update({'WinLossTie': toReturn})
-    # print(handDict)
     return handDict
 
                 
@@ -323,11 +318,7 @@ def getWinLossTieOdds(handDict, iters):
 
 if __name__ == '__main__':
     for i in range(1):
-        t = timeit.timeit(lambda: handDistribution(['C6', 'DK'], [], 50), number=1, globals=globals())
-        print(t)
         
-        dict = handDistribution(['HA', 'CA'], [], 50)
-        #print(dict)
-        
-        t = timeit.timeit(lambda: getWinLossTieOdds(dict, 3000), number=1, globals=globals())
+        t = timeit.timeit(lambda: getWinLossTieOdds(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
         print(t)
+        print(getWinLossTieOdds(['C6', 'DK'], [], 50, 3000))
