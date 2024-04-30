@@ -23,9 +23,9 @@ class POMCPPlayer(BasePokerPlayer):
     print("-------------------------------")
     game_state = restore_game_state(round_state)
     print(game_state)
-    print("-------PRINTS ALL POSSIBLE CARDS IN DECK--------")
-    game_state = restore_game_state(round_state)
-    pp.pprint([card.__str__() for card in game_state["table"].deck.deck])
+    # print("-------PRINTS ALL POSSIBLE CARDS IN DECK--------")
+    # game_state = restore_game_state(round_state)
+    # pp.pprint([card.__str__() for card in game_state["table"].deck.deck])
 
 
     r = rand.random()

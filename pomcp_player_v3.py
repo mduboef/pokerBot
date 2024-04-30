@@ -100,8 +100,6 @@ class POMCPPlayer(BasePokerPlayer):
         best_action = max(self.tree.children.values(), key=lambda x: x.value)
         return best_action.action
 
-    # TODO: mason - Are valid actions valid for all states?
-    # I don't think so (e.g., small blind, big blind?). Let's verify this.
     def simulate(self, particle, tree, depth, valid_actions):
         """
         Simulation performed using the PO-UCT Algorithm
