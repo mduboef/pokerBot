@@ -65,7 +65,6 @@ def testperf(agent_name1, agent1, agent_name2, agent2):
 	else:
 		print("\n It's a draw!") 
 
-
 def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('-n1', '--agent_name1', help="Name of agent 1", default="POMCP", type=str)
