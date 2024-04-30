@@ -3,6 +3,7 @@ from pypokerengine.api.emulator import Emulator
 from pypokerengine.engine.card import Card
 from pypokerengine.engine.deck import Deck
 from pypokerengine.utils.card_utils import gen_deck, gen_cards
+from randomplayer import RandomPlayer
 
 #TODO: Think about ways to make this smarter like configuring the random distributions away from random uniform across all potential values (e.g., skewed gaussian)
 
@@ -34,67 +35,88 @@ class Observation:
         return State(self.hole_card, self._gen_op_hole_cards(), self.round_state)
     
 class State:
-    def __init__(self, hole_card_main: list[str], hole_card_op: list[str], round_state: dict) -> None:
+    def __init__(self, hole_card_main: list[str], hole_card_op: list[str], community_cards: list[str], game_state: dict) -> None:
         self.hole_card_main = hole_card_main
         self.hole_card_op = hole_card_op
-        self.community_card = round_state['community_card']
-        self.round_state = round_state
+        self.community_card = community_cards
+        self.game_state = game_state
     
     def get_observation(self):
-        return Observation(self.hole_card_main, self.round_state)
+        return Observation(self.hole_card_main, self.game_state)
     
     @classmethod
-    def from_game_state(cls, game_state: dict, hole_card_main: list[str], hole_card_op: list[str]):
-        return cls(hole_card_main, hole_card_op, game_state['round_state']['community_card'], game_state['round_state'])
+    def from_game_state(cls, game_state: dict):
+        return cls(
+            [str(i) for i in game_state["table"].seats.players[0].hole_card],
+            [str(i) for i in game_state["table"].seats.players[1].hole_card],
+            [str(i) for i in game_state["table"].get_community_card()],
+            game_state
+        )
     
-    # TODO: Finish this
+    @classmethod
     def random_state(cls):
         """
         Generates a random state of the game.
         Since we can't initialize a game state along with the player's hoe cards, we do a hacky version
         """
-        # Generate a new deck and shuffle it
-        deck = gen_deck()
-        deck.shuffle()
+        num_player = 2
+        max_round = 1000
+        small_blind_amount = 10
+        ante = 0 
+        emulator = Emulator()
+        emulator.set_game_rule(num_player, max_round, small_blind_amount, ante)
+        # emulator.set_game_rule(player_num=3, max_round=10, small_blind_amount=10, ante_amount=0)
 
-        # Distribute two hole cards to each player
-        player_hole_cards = {}
-        for i in range(2):
-            hole_cards = [deck.draw_card(), deck.draw_card()]
-            player_hole_cards[f"Player{i+1}"] = gen_cards([card.__str__() for card in hole_cards])
+        # 2. Setup GameState object
+        p1_uuid = "uuid-1"
+        p1_model = RandomPlayer(p1_uuid)
+        emulator.register_player(p1_uuid, p1_model)
+        p2_uuid = "uuid-2"
+        p2_model = RandomPlayer(p2_uuid)
+        emulator.register_player(p2_uuid, p2_model)
+        players_info = {
+            "uuid-1": { "name": "POMCP", "stack": 1000 },
+            "uuid-2": { "name": "RANDOM", "stack": 1000 },
+        }
 
-        return cls(player_hole_cards[0], player_hole_cards[1], [], None)
+        # Initializes the initial game state without dealing
+        initial_state = emulator.generate_initial_game_state(players_info)
+        # Actually starts the round and is now a player's turn
+        # Hoe cards have been distributed, but not community cards
+        game_state, events = emulator.start_new_round(initial_state)
+
+        hoe_cards_0 = [str(i) for i in game_state["table"].seats.players[0].hole_card]
+        hoe_cards_1 = [str(i) for i in game_state["table"].seats.players[1].hole_card]
+
+        # Community cards is empty
+        return cls(hoe_cards_0, hoe_cards_1, [], game_state), emulator
     
-    # TODO: Finish this
-    def generate_random_initial_state(nb_players=2, initial_stack=1000, small_blind_amount=10):
-        config = setup_config(max_round=1, initial_stack=initial_stack, small_blind_amount=small_blind_amount)
+
+    # def generate_random_initial_state(nb_players=2, initial_stack=1000, small_blind_amount=10):
+    #     config = setup_config(max_round=1, initial_stack=initial_stack, small_blind_amount=small_blind_amount)
         
-        # Register players
-        for i in range(nb_players):
-            config.register_player(name=f"Player{i+1}", algorithm=RandomPlayer())
+    #     # Register players
+    #     for i in range(nb_players):
+    #         config.register_player(name=f"Player{i+1}", algorithm=RandomPlayer())
 
-        # Generate a random deck and shuffle it
-        deck = gen_deck()
-        random.shuffle(deck)
+    #     # Generate a random deck and shuffle it
+    #     deck = gen_deck()
+    #     random.shuffle(deck)
 
-        # Distribute two hole cards to each player
-        player_hole_cards = {f"Player{i+1}": [deck.draw_card(), deck.draw_card()] for i in range(nb_players)}
+    #     # Distribute two hole cards to each player
+    #     player_hole_cards = {f"Player{i+1}": [deck.draw_card(), deck.draw_card()] for i in range(nb_players)}
 
-        # Generate random community cards (for the flop, turn, and river)
-        community_cards = [deck.draw_card() for _ in range(5)]  # Three for flop, one for turn, one for river
+    #     # Generate random community cards (for the flop, turn, and river)
+    #     community_cards = [deck.draw_card() for _ in range(5)]  # Three for flop, one for turn, one for river
 
-        # Start the game with this setup
-        game_result = start_poker(config, verbose=1)
+    #     # Start the game with this setup
+    #     game_result = start_poker(config, verbose=1)
 
-        # Printing initial state details
-        print("Player Hole Cards:", player_hole_cards)
-        print("Community Cards:", community_cards)
+    #     # Printing initial state details
+    #     print("Player Hole Cards:", player_hole_cards)
+    #     print("Community Cards:", community_cards)
         
-        return game_result['game_state']
-
-class RandomPlayer:
-    def declare_action(self, valid_actions, hole_card, round_state):
-        return random.choice(valid_actions)['action'], 0
+    #     return game_result['game_state']
 
 def get_current_player_id(round_state):
     return round_state['next_player']
