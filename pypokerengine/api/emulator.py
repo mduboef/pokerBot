@@ -86,9 +86,9 @@ class Emulator(object):
             next_player_uuid = game_state["table"].seats.players[next_player_pos].uuid
             next_player_algorithm = self.fetch_player(next_player_uuid)
             msg = MessageBuilder.build_ask_message(next_player_pos, game_state)["message"]
-            action, amount = next_player_algorithm.declare_action(\
+            action = next_player_algorithm.declare_action(\
                     msg["valid_actions"], msg["hole_card"], msg["round_state"])
-            game_state, messages = RoundManager.apply_action(game_state, action, amount)
+            game_state, messages = RoundManager.apply_action(game_state, action)
             mailbox += messages
         events = [self.create_event(message[1]["message"]) for message in mailbox]
         events = [e for e in events if e]
