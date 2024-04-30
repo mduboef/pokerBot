@@ -72,6 +72,7 @@ class POMCPPlayer(BasePokerPlayer):
         self.reinvigoration = reinvigoration
         self.rollout_policy = RandomPlayer()
         self.tree = None # TODO: Need to adjust this for all the tree variables
+        self.cur_node =
     
     def declare_action(self, valid_actions, hole_card, round_state):
         """
@@ -90,15 +91,16 @@ class POMCPPlayer(BasePokerPlayer):
                 # Use particle reinvigoration by adding particles with noise 
                 # uniform sample from possible states given current observation
                 particles.append(Particle.from_obs(obs))
-            tree.particles = particles
+            self.tree.particles = particles
 
         for _ in particles:
             # Take random sample from particles in 
-            particle = random.sample(tree.particles, 1)[0]
+            particle = random.sample(self.tree.particles, 1)[0]
             self.simulate(particle, tree, 0, valid_actions)
 
-        best_action = max(self.tree.children.values(), key=lambda x: x.value)
-        return best_action.action
+        child = max(self.tree.children.values(), key=lambda x: x.value)
+        self.tree = child
+        return child.best_action
 
     def simulate(self, particle, tree, depth, valid_actions):
         """

@@ -12,7 +12,7 @@ class POMCPPlayer(BasePokerPlayer):
     # what is next_player?
 
     pp = pprint.PrettyPrinter(indent=2)
-    print("------------ROUND_STATE(RANDOM)--------")
+    print("------------ROUND_STATE(POMCP)--------")
     pp.pprint(round_state)
     print("------------HOLE_CARD----------")
     pp.pprint(hole_card)
@@ -36,6 +36,8 @@ class POMCPPlayer(BasePokerPlayer):
     else:
       call_action_info = valid_actions[0]
     action = call_action_info["action"]
+    print("-------PRINTS ALL POSSIBLE CARDS IN DECK--------")
+    print(action)
     return action  # action returned here is sent to the poker engine
 
   def receive_game_start_message(self, game_info):

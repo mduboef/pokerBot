@@ -22,10 +22,10 @@ $ python testperf.py -n1 "Random Warrior 1" -a1 RandomPlayer -n2 "Random Warrior
 def testperf(agent_name1, agent1, agent_name2, agent2):		
 
 	# Init to play 500 games of 1000 rounds
-	num_game = 10
-	max_round = 1000
-	initial_stack = 10000
-	smallblind_amount = 20
+	num_game = 1
+	max_round = 1
+	initial_stack = 1000
+	smallblind_amount = 10
 
 	# Init pot of players
 	agent1_pot = 0
@@ -68,9 +68,9 @@ def testperf(agent_name1, agent1, agent_name2, agent2):
 
 def parse_arguments():
     parser = ArgumentParser()
-    parser.add_argument('-n1', '--agent_name1', help="Name of agent 1", default="Your agent", type=str)
+    parser.add_argument('-n1', '--agent_name1', help="Name of agent 1", default="POMCP", type=str)
     parser.add_argument('-a1', '--agent1', help="Agent 1", default=POMCPPlayer())    
-    parser.add_argument('-n2', '--agent_name2', help="Name of agent 2", default="Your agent", type=str)
+    parser.add_argument('-n2', '--agent_name2', help="Name of agent 2", default="RANDOM", type=str)
     parser.add_argument('-a2', '--agent2', help="Agent 2", default=RandomPlayer())    
     args = parser.parse_args()
     return args.agent_name1, args.agent1, args.agent_name2, args.agent2

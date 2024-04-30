@@ -1,4 +1,8 @@
 import random
+from pypokerengine.api.emulator import Emulator
+from pypokerengine.engine.card import Card
+from pypokerengine.engine.deck import Deck
+from pypokerengine.utils.card_utils import gen_deck, gen_cards
 
 #TODO: Think about ways to make this smarter like configuring the random distributions away from random uniform across all potential values (e.g., skewed gaussian)
 
@@ -42,6 +46,55 @@ class State:
     @classmethod
     def from_game_state(cls, game_state: dict, hole_card_main: list[str], hole_card_op: list[str]):
         return cls(hole_card_main, hole_card_op, game_state['round_state']['community_card'], game_state['round_state'])
+    
+    # TODO: Finish this
+    def random_state(cls):
+        """
+        Generates a random state of the game.
+        Since we can't initialize a game state along with the player's hoe cards, we do a hacky version
+        """
+        # Generate a new deck and shuffle it
+        deck = gen_deck()
+        deck.shuffle()
+
+        # Distribute two hole cards to each player
+        player_hole_cards = {}
+        for i in range(2):
+            hole_cards = [deck.draw_card(), deck.draw_card()]
+            player_hole_cards[f"Player{i+1}"] = gen_cards([card.__str__() for card in hole_cards])
+
+        return cls(player_hole_cards[0], player_hole_cards[1], [], None)
+    
+    # TODO: Finish this
+    def generate_random_initial_state(nb_players=2, initial_stack=1000, small_blind_amount=10):
+        config = setup_config(max_round=1, initial_stack=initial_stack, small_blind_amount=small_blind_amount)
+        
+        # Register players
+        for i in range(nb_players):
+            config.register_player(name=f"Player{i+1}", algorithm=RandomPlayer())
+
+        # Generate a random deck and shuffle it
+        deck = gen_deck()
+        random.shuffle(deck)
+
+        # Distribute two hole cards to each player
+        player_hole_cards = {f"Player{i+1}": [deck.draw_card(), deck.draw_card()] for i in range(nb_players)}
+
+        # Generate random community cards (for the flop, turn, and river)
+        community_cards = [deck.draw_card() for _ in range(5)]  # Three for flop, one for turn, one for river
+
+        # Start the game with this setup
+        game_result = start_poker(config, verbose=1)
+
+        # Printing initial state details
+        print("Player Hole Cards:", player_hole_cards)
+        print("Community Cards:", community_cards)
+        
+        return game_result['game_state']
+
+class RandomPlayer:
+    def declare_action(self, valid_actions, hole_card, round_state):
+        return random.choice(valid_actions)['action'], 0
 
 def get_current_player_id(round_state):
     return round_state['next_player']
@@ -66,7 +119,7 @@ def calculate_valid_actions(round_state, player_id):
 # Function to generate a random game state given current observation
 def generate_random_game_state(round_state, hole_card: list) -> str:
     """
-        Outputs the same format from generate_random_game_observation() and generate_random_game_state()
+    Outputs the same format from generate_random_game_observation() and generate_random_game_state()
     Input is of the format:
     { 'action_histories': { 'flop': [ { 'action': 'RAISE',
                                     'add_amount': 40,
