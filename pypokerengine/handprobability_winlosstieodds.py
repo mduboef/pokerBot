@@ -214,7 +214,7 @@ def handDistribution(hole, community, ms_limit, iter_limit=1000000, suit=SUIT, c
                     'community': community, # Same with community cards
                     'iterations': iters, # Return iteration count to get how effective it was
                     'with_hole': results}
-    print(iters)
+    #print(iters)
     return return_obj
 
 def getWinLossTieOdds(handDict, iters):
@@ -236,32 +236,49 @@ def getWinLossTieOdds(handDict, iters):
     print("MY HAND: ", playerHandList)
     print("OP HAND: ", oppHandList)
     for _ in range(iters):
-        playerIn = True
-        oppIn = True
+        #playerIn = True
+        #oppIn = True
         sample = random.uniform(0,1)
-        #print(sample)
-        for i in range(len(playerHandList)):
-            if playerHandList[i] > sample:
-                playerIn = False
-            if oppHandList[i] > sample:
-                oppIn = False
-            if playerIn and not oppIn:
-                playerWins += 1
+        ##print(sample)
+        #for i in range(len(playerHandList)):
+        #    if playerHandList[i] > sample:
+        #        playerIn = False
+        #    if oppHandList[i] > sample:
+        #        oppIn = False
+        #    if playerIn and not oppIn:
+        #        playerWins += 1
+        #        break
+        #    if not playerIn and oppIn:
+        #        playerLosses += 1
+        #        break
+        #    if not playerIn and not oppIn:
+        #        break
+        #if not playerIn and not oppIn:
+        #    playerTies += 1
+        playerIndex = 0
+        oppIndex = 0
+        while playerHandList[playerIndex] <= sample:
+            playerIndex += 1
+            if playerIndex > len(playerHandList):
                 break
-            if not playerIn and oppIn:
-                playerLosses += 1
+        while oppHandList[oppIndex] <= sample:
+            oppIndex += 1
+            if oppIndex > len(oppHandList):
                 break
-            if not playerIn and not oppIn:
-                break
-        if not playerIn and not oppIn:
+        if playerIndex > oppIndex:
+            playerWins += 1
+        if oppIndex > playerIndex:
+            playerLosses += 1
+        if oppIndex == playerIndex:
             playerTies += 1
     print(playerWins)
     print(playerLosses)
     print(playerTies)
 
     toReturn = (playerWins/iters, playerLosses/iters, playerTies/iters)
-    print(toReturn)
-    return toReturn
+    handDict.update({'WinLossTie': toReturn})
+    print(handDict)
+    return handDict
 
                 
             
@@ -275,6 +292,8 @@ if __name__ == '__main__':
         t = timeit.timeit(lambda: handDistribution(['C6', 'DK'], [], 50), number=1, globals=globals())
         print(t)
         
-        dict = handDistribution(['HA', 'DA'], ['SA', 'C7', 'HQ'], 50)
-        print(dict)
-        getWinLossTieOdds(dict, 3000)
+        dict = handDistribution(['HA', 'CA'], [], 50)
+        #print(dict)
+        
+        t = timeit.timeit(lambda: getWinLossTieOdds(dict, 3000), number=1, globals=globals())
+        print(t)
