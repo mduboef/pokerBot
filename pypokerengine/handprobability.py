@@ -1,118 +1,156 @@
 import timeit
 import random
 
-# Constant lists pre-written for optimization
 SUIT = ['C', 'D', 'H', 'S']
-CARD = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+SUIT_RANGE = [0, 1, 2, 3]
+SUIT_CONVERSIONS = {'C': 0, 'D': 1, 'H': 2, 'S': 3}
+
+VALUE = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+VALUE_RANGE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 VALUE_CONVERSIONS = {'2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7, '10': 8, 'J': 9, 'Q': 10, 'K': 11, 'A': 12} # Map strings to numbers (Abstraction)
-VALUE_RANGE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] # Pre-written range array for speed
 
-# Converts a set of known hole and community cards into an abstracted set
+
+def get_single_process(hole, community):
+    known = convert_known(hole, community)
+    deck = generateDeckTuple(known)
+    sample = sampleSortDeck(deck, known)
+    return processCards(sample)
+
 def convert_known(hole, community):
-    return [(card[0], VALUE_CONVERSIONS[card[1:]]) for card in [*hole, *community]]
+    return [(SUIT_CONVERSIONS[card[0]], VALUE_CONVERSIONS[card[1:]]) for card in [*hole, *community]]
 
-# Generates a deck that contains values not in the known card list
-def generateDeckTuple(suit, card, known):
+def generateDeckTuple(known):
     deck = []
-    for suit in SUIT:
-        for card in VALUE_RANGE:
-            suitCard = (suit, card)
+    for suit in SUIT_RANGE:
+        for value in VALUE_RANGE:
+            suitCard = (suit, value)
             if suitCard not in known:
-                deck.append((suit, card))
+                deck.append((suit, value))
     return deck
 
-# Samples without replacement and sorts the new hand by value
+# Samples and adds with splat operator
 def sampleSortDeck(deck, known):
     sample = random.sample(deck, k=(7 - len(known)))
     return sorted([*known, *sample], key=lambda x: x[1])
 
-# Pre-processes a hand to speed up future checks
 def processCards(cards):
-    # Add a list for each suit, a unique set of values, and a count for each pair, triple, and quadruple of a number
-    result = {'C': [], 'D': [], 'H': [], 'S': [], 'valueList': set(), 'valueCounts': {1: 0, 2: 0, 3: 0, 4: 0}}
+    suits = ([],[],[],[])
+    valueList = [0, 0, 0, 0, 0, 0, 0]
 
-    # Used to quickly count pairs/triples/quadruples
-    counts = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    # Starting with -1 eliminates the 'i - 1' operation in counts[i-1]
+    curr_count = -1
+    iters = -1
+    last = -1
 
-    # Save each card value and get the count
+    # Tuples are faster but immutable
+    counts = [0, 0, 0, 0]
+
+    # Looping is time-equivalent to hardcoding lists/sets
+    # We can save operations by combining the count and suit loop
     for card in cards:
-        result[card[0]].append(card[1])
-        result['valueList'].add(card[1])
-        counts[card[1]] += 1
+        curr_count += 1
+        iters += 1
+        value = card[1]
 
-    # Get the count of each value in the hand
-    for i in result['valueList']:
-        result['valueCounts'][counts[i]] += 1
+        if iters == 0:
+            curr_count = -1
+        elif last != value:
+            counts[curr_count] += 1
+            curr_count = -1
+        last = value
 
-    # Convert to a list for future searching
-    result['valueList'] = list(result['valueList'])
+        suits[card[0]].append(value)
+        valueList[iters] = value
 
-    return result
+    curr_count += 1
+    counts[curr_count] += 1
 
-# Checks if a set of cards contains a royal flush
-def checkRoyalFlush(cardData):
-    for suit in SUIT:
-        # We can check the bounds since it is sorted, numbers are unique per suit, and
-        # the royal flush is on the right
-        if len(cardData[suit]) > 4 and cardData[suit][-5] == 8 and cardData[suit][-1] == 12:
-            return True
-        # TOODOO HERE CHECK IF IT BREAKS OR ADD MORE IF STATEMENTS
-    return False
+    valueSet = set(valueList)
 
-# Checks if a set of cards contains a straight flush
-def checkStraightFlush(cardData):
-    for suit in SUIT:
-        for i in range(len(cardData[suit]) - 4):
-            # Sorted and unique, check if 4 items ahead = item - 4
-            if cardData[suit][i] == cardData[suit][i + 4] - 4:
-                return True
-    return False
+    return suits, list(valueSet), counts
 
-# Checks if a set of cards contains a four of a kind
-def checkFourKind(cardData):
-    return cardData['valueCounts'][4] > 0
-
-# Checks if a set of cards contains a three of a kind
-def checkThreeKind(cardData):
-    return cardData['valueCounts'][3] > 0
-
-# Checks if a set of cards contains 2 pairs
-def check2Pair(cardData):
-    return cardData['valueCounts'][2] > 1
-
-# Checks if a set of cards contains a pair
-def checkPair(cardData):
-    return cardData['valueCounts'][2] > 0
-
-# Checks if a set of cards contains a full-house
-def checkFullHouse(cardData):
-    return cardData['valueCounts'][2] > 0 and cardData['valueCounts'][3] > 0
-
-# Checks if a set of cards contains a flush
-def checkFlush(cardData):
-    #for suit in SUIT:
-    #    if len(cardData[suit]) > 4:
-    #        return True
-    if len(cardData['C']) > 4 or len(cardData['D']) > 4 or len(cardData['H']) > 4 or len(cardData['S']) > 4:
+def checkRoyalFlush(suits):
+    # We can check the bounds since it is sorted, numbers are unique per suit, and
+    # the royal flush is on the right
+    if (len(suits[0]) > 4 and suits[0][-5] == 8 and suits[0][-1] == 12)\
+    or (len(suits[1]) > 4 and suits[1][-5] == 8 and suits[1][-1] == 12)\
+    or (len(suits[2]) > 4 and suits[2][-5] == 8 and suits[2][-1] == 12)\
+    or (len(suits[3]) > 4 and suits[3][-5] == 8 and suits[3][-1] == 12):
         return True
     return False
 
-# Checks if a set of cards contains a straight
-def checkStraight(cardData):
-    for i in range(len(cardData['valueList']) - 4):
-        # Sorted and unique, check if 4 items ahead = item - 4
-        # By the problem, every item in the range must be in the straight
-        if cardData['valueList'][i] == cardData['valueList'][i + 4] - 4:
+def checkStraightFlush(suits):
+    s0 = suits[0]
+    s1 = suits[1]
+    s2 = suits[2]
+    s3 = suits[3]
+    lne_s0 = len(s0)
+    lne_s1 = len(s1)
+    lne_s2 = len(s2)
+    lne_s3 = len(s3)
+    if (lne_s0 > 4 and s0[0] == s0[4] - 4)\
+    or (lne_s0 > 5 and s0[1] == s0[5] - 4)\
+    or (lne_s0 > 6 and s0[2] == s0[6] - 4)\
+    or (lne_s1 > 4 and s1[0] == s1[4] - 4)\
+    or (lne_s1 > 5 and s1[1] == s1[5] - 4)\
+    or (lne_s1 > 6 and s1[2] == s1[6] - 4)\
+    or (lne_s2 > 4 and s2[0] == s2[4] - 4)\
+    or (lne_s2 > 5 and s2[1] == s2[5] - 4)\
+    or (lne_s2 > 6 and s2[2] == s2[6] - 4)\
+    or (lne_s3 > 4 and s3[0] == s3[4] - 4)\
+    or (lne_s3 > 5 and s3[1] == s3[5] - 4)\
+    or (lne_s3 > 6 and s3[2] == s3[6] - 4):
+        return True
+    return False
+
+def checkFourKind(count):
+    if count[3] > 0:
+        return True
+    return False
+
+def checkThreeKind(count):
+    if count[2] > 0:
+        return True
+    return False
+
+def check2Pair(count):
+    if count[1] > 1:
+        return True
+    return False
+
+def checkPair(count):
+    if count[1] > 0:
+        return True
+    return False
+
+def checkFullHouse(count):
+    if count[1] > 0 and count[2] > 0:
+        return True
+    return False
+
+def checkFlush(suits):
+    if len(suits[0]) > 4\
+    or len(suits[1]) > 4\
+    or len(suits[2]) > 4\
+    or len(suits[3]) > 4:
+        return True
+    return False
+
+def checkStraight(values):
+    len_values = len(values)
+    if (len_values > 4 and values[0] == values[4] - 4)\
+    or (len_values > 5 and values[1] == values[5] - 4)\
+    or (len_values > 6 and values[2] == values[6] - 4):
             return True
     return False
 
-def handDistribution(hole, community, ms_limit, iter_limit=1000000, suit=SUIT, card=CARD):
+def handDistribution(hole, community, ms_limit):
     # Track total time taken to run the script
     start = timeit.default_timer()
 
     # Prepare the deck and known cards only once
     known = convert_known(hole, community)
-    deck = generateDeckTuple(suit, card, known)
+    deck = generateDeckTuple(known)
 
     # Save results to help calculate averages
     royalFlush = 0
@@ -127,66 +165,91 @@ def handDistribution(hole, community, ms_limit, iter_limit=1000000, suit=SUIT, c
     high = 0
 
     isFlush = False
+    isThreeKind = False
 
     # Count the number of loops completed
     iters = 0
     while True:
+        # Track iterations
+        iters += 1
+    
+        # Always finish prior to time-consuming operations
+        if timeit.default_timer() - start > ms_limit / 1000:
+            break
+
         # Get hand for simulation
         sample = sampleSortDeck(deck, known)
-        cardData = processCards(sample)
+        suits, values, counts = processCards(sample)
+
+        # save repeat operations
+        len_Clubs = len(suits[0])
+        len_Diamonds = len(suits[1])
+        len_Hearts = len(suits[2])
+        len_Spades = len(suits[3])
+        num_unique_values = len(values)
+        sample_pair_count = counts[1]
 
         isFlush = False
 
         # Check flushes
-        if checkFlush(cardData) is True:
+        if len_Clubs > 4\
+        or len_Diamonds > 4\
+        or len_Hearts > 4\
+        or len_Spades > 4:
+            
             # Checks these only if there is a flush
-            if checkStraightFlush(cardData) is True:
-                if checkRoyalFlush(cardData) is True:
+            if checkStraightFlush(suits) is True:
+                if checkRoyalFlush(suits) is True:
                     royalFlush += 1
+                    continue
                 else:
                     straightFlush += 1
+                    continue
             else:
                 isFlush = True
 
-        # 4-kind has no relations
-        elif checkFourKind(cardData) is True:
+        # Check 4-kind
+        if counts[3] > 0:
             fourKind += 1
+            continue
 
         # Checking full-house relation broke 3-kind :(
-        elif checkFullHouse(cardData) is True:
-            fullHouse += 1
+        if counts[2] > 0:
+            if sample_pair_count > 0:
+                fullHouse += 1
+                continue
+            else:
+                isThreeKind = True
 
         # We already know the state of flushes
-        elif isFlush is True:
+        if isFlush:
             flush += 1
+            continue
         
         # Checking for straight vs straight flush is too different to relate
-        elif checkStraight(cardData) is True:
+        if (num_unique_values > 4 and values[0] == values[4] - 4)\
+        or (num_unique_values > 5 and values[1] == values[5] - 4)\
+        or (num_unique_values > 6 and values[2] == values[6] - 4):
             straight += 1
+            continue
 
-        # Already checked 3-kind
-        elif checkThreeKind(cardData) is True:
-        # elif isThreeKind is True:
+        # Check 3-kind
+        if isThreeKind:
             threeKind += 1
+            continue
 
         # There can only be 2 pairs if there is 1 pair
-        elif checkPair(cardData) is True:
-            if check2Pair(cardData) is True:
+        if sample_pair_count > 0:
+            if sample_pair_count > 2:
                 twoPair += 1
             else:
                 pair += 1
+            continue
 
         # High-card is the best you can do if you pass over the rest
         else:
             high += 1
 
-        # Track iterations
-        iters += 1
-
-        # Always finish at the end if over-time or over limit of simulations
-        if timeit.default_timer() - start > ms_limit / 1000 or iter_limit < iters:
-            break
-    
     # Average the results to get a full distribution
     results = {'Royal Flush': royalFlush / iters,
                 'Straight Flush':straightFlush / iters,
@@ -203,13 +266,52 @@ def handDistribution(hole, community, ms_limit, iter_limit=1000000, suit=SUIT, c
                     'community': community, # Same with community cards
                     'iterations': iters, # Return iteration count to get how effective it was
                     'with_hole': results}
-    print(iters)
+    
     return return_obj
+
+def getWinLossTieOdds(hole, community, ms_limit, iters):
+    handDict = handDistribution(hole, community, ms_limit/2)
+    oppHand = handDistribution(handDict['community'], [], ms_limit/2)
+    oppHandList = [oppHand['with_hole'][key] for key in oppHand['with_hole'].keys()]
+    oppHandList.reverse()
+    playerHandList = [handDict['with_hole'][key] for key in handDict['with_hole'].keys()]
+    playerHandList.reverse()
+    tempList = [0 for _ in range(len(playerHandList))]
+    for i in range(len(playerHandList)):
+        tempList[i] = sum(playerHandList[0:i+1])
+    playerHandList = [*tempList]
+    for i in range(len(oppHandList)):
+        tempList[i] = sum(oppHandList[0:i+1])
+    oppHandList = [*tempList]
+    playerWins = 0
+    playerLosses = 0
+    playerTies = 0
+    for _ in range(iters):
+        sample = random.uniform(0,1)
+        playerIndex = 0
+        oppIndex = 0
+        while playerHandList[playerIndex] <= sample:
+            playerIndex += 1
+            if playerIndex >= len(playerHandList):
+                break
+        while oppHandList[oppIndex] <= sample:
+            oppIndex += 1
+            if oppIndex >= len(oppHandList):
+                break
+        if playerIndex > oppIndex:
+            playerWins += 1
+        if oppIndex > playerIndex:
+            playerLosses += 1
+        if oppIndex == playerIndex:
+            playerTies += 1
+
+    toReturn = (playerWins/iters, playerLosses/iters, playerTies/iters)
+    handDict.update({'WinLossTie': toReturn})
+    return handDict
 
 if __name__ == '__main__':
     for i in range(1):
-        t = timeit.timeit(lambda: handDistribution(['C6', 'DK'], [], 50), number=1, globals=globals())
-        print(t)
         
-        #dict = handDistribution(SUIT, CARD, ['C6', 'DK'], [], 50)
-        #print(dict)
+        t = timeit.timeit(lambda: getWinLossTieOdds(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
+        print(t)
+        print(getWinLossTieOdds(['C6', 'DK'], [], 50, 3000))
