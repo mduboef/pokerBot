@@ -1,5 +1,6 @@
 from pypokerengine.players import BasePokerPlayer
-import pypokerengine.gametree as gt
+import gametree as gt
+import timeit
 
 class TreePlayer(BasePokerPlayer):
 
@@ -10,9 +11,11 @@ class TreePlayer(BasePokerPlayer):
     curr_round = action_histories[rounds[-1]]
     parsed_history = [x['action'].lower() for x in curr_round if x['action'] == 'RAISE' or x['action'] == 'CALL' or x['action'] == 'FOLD']
     pot = round_state['pot']['main']['amount'] + sum(map(lambda x: x['amount'], round_state['pot']['side']))
+    # start = timeit.default_timer()
     tree = gt.LimitPokerTree(hole_cards=hole_card, community_cards=round_state['community_card'], history=parsed_history, pot=pot)
     tree.build_tree()
     action_choice = tree.getNodeAction()
+    # print(timeit.default_timer() - start)
     return action_choice
 
   def receive_game_start_message(self, game_info):

@@ -1,6 +1,7 @@
 import itertools
 import random
-import pypokerengine.handprobability as handprobability
+# import pypokerengine.handprobability as handprobability
+import handprobability
 
 class BettingNode:
     def __init__(self,
@@ -11,7 +12,8 @@ class BettingNode:
                  hole_cards=None,
                  community_cards=None,
                  history=[],
-                 parent=None):
+                 parent=None,
+                 dist=None):
         
         # Player deciding which move to make next
         self.player = player
@@ -43,6 +45,8 @@ class BettingNode:
         # Defines if node is a leaf
         self.is_terminal = self.is_terminal_history()
 
+        self.dist = dist
+
         # value determines how 'good' a node is
         if self.is_terminal_history():
             self.value = self.evaluation()
@@ -60,12 +64,13 @@ class BettingNode:
     def evaluation(self):
         # h_1(x) (expected value of pot)
         pot = self.pot
-        full_result_dict = handprobability.getWinLossTieOdds(self.hole_cards, self.community_cards, 50, 3000)
+        full_result_dict = self.dist
         win_loss = full_result_dict['WinLossTie']
+        print(win_loss)
         if self.action == 'call':
-            value = (win_loss[0])*pot
+            value = (win_loss[0])
         if self.action == 'fold':
-            value = (win_loss[1])*pot
+            value = (win_loss[1])
 
         # h_2(x)
         # ...
@@ -139,7 +144,7 @@ class LimitPokerTree:
         self.root = None
 
         # Given game state data
-        self.my_hole_cards = hole_cards
+        self.hole_cards = hole_cards
         self.community_cards = community_cards
         self.history = history
         self.current_pot = pot
@@ -151,6 +156,8 @@ class LimitPokerTree:
         # Get raise count in history
         self.raise_count = sum([1 for r in history if r == 'raise'])
 
+        self.hand_dist = handprobability.getWinLossTieOdds(self.hole_cards, self.community_cards, 100, 3000)
+
     def build_tree(self):
         # Do not calculate a tree if the last move was a fold
         # Should never occur: edge case
@@ -160,10 +167,11 @@ class LimitPokerTree:
         # Create a root node from the known current game state
         self.root = BettingNode(player=self.starting_player,
                                 pot=self.current_pot,
-                                hole_cards=self.my_hole_cards,
+                                hole_cards=self.hole_cards,
                                 community_cards=self.community_cards,
                                 raise_count=self.raise_count,
-                                history=self.history)
+                                history=self.history,
+                                dist=self.hand_dist)
 
         # Generate a tree
         if not self.root.is_terminal:
@@ -178,73 +186,88 @@ class LimitPokerTree:
         # Do nothing if terminal
         if parent_node.is_terminal:
             return
-
-        # Generate possible actions for a player: fold, call, raise (if raises are left)
-        actions = ['fold', 'call']
-        if parent_node.raise_count < self.MAX_RAISES:
-            actions.append('raise')
-
-        for action in actions:
-            # Add to the history of the new node
-            new_history = [*parent_node.history, action]
-            if action == 'fold':
-                # Terminate on a fold - do not generate new child game states
-                fold_node = BettingNode(player=self.next_player(parent_node.player),
-                                        action='fold',
-                                        pot=parent_node.pot,
-                                        parent=parent_node,
-                                        raise_count=parent_node.raise_count,
-                                        hole_cards=self.my_hole_cards,
-                                        community_cards=self.community_cards,
-                                        history=new_history)
-
-                parent_node.add_child(fold_node)
-
-            # Add the correct amount to the pot based on the action
-            else:
-                pot_after_action = parent_node.pot
-
-                # Only add 10 if the big blind does not call after the small blind limps
-                if action == 'call' and not parent_node.is_special_call_node():
-                    pot_after_action += self.SMALL_BLIND
-
-                # Only add 10 if the big blind is raising after a limp
-                elif action == 'raise' and parent_node.is_special_call_node():
-                    pot_after_action += self.SMALL_BLIND
-
-                # Add 20 if they raise (see + 10, raise + 10)
-                elif action == 'raise':
-                    pot_after_action += self.BIG_BLIND
-
-                # Create a node for the selected action
-                action_node = BettingNode(player=self.next_player(parent_node.player),
-                                          action=action,
-                                          pot=pot_after_action,
-                                          parent=parent_node,
-                                          raise_count=parent_node.raise_count + (1 if action == 'raise' else 0),
-                                          hole_cards=self.my_hole_cards,
-                                          community_cards=self.community_cards,
-                                          history=new_history)
-
-                parent_node.add_child(action_node)
-
-                # Betting only continues on raise or if small blind limps
-                if not action_node.is_terminal:
-                    self.generate_children(action_node)
-
-        if len(parent_node.children) > 0:
-            value_sum = sum(map(lambda node: node.value, parent_node.children))
-            value_avg = value_sum / len(parent_node.children)
-        else:
-            value_avg = None
         
-        parent_node.value = value_avg
+        if parent_node.player == 'small_blind':
+            next_player = 'big_blind'
+        else:
+            next_player = 'small_blind'
 
-    # Calculates the next player
-    def next_player(self, player):
-        if player == 'small_blind':
-            return 'big_blind'
-        return 'small_blind'
+        # Checks if a raise is allowed
+        does_raise = parent_node.raise_count < LimitPokerTree.MAX_RAISES
+
+        # --------------- Fold ---------------
+
+        # Terminate on a fold - do not generate new child game states
+        fold_node = BettingNode(player=next_player,
+                                action='fold',
+                                pot=parent_node.pot,
+                                parent=parent_node,
+                                raise_count=parent_node.raise_count,
+                                hole_cards=self.hole_cards,
+                                community_cards=self.community_cards,
+                                history=[*parent_node.history, 'fold'],
+                                dist=self.hand_dist)
+
+        parent_node.add_child(fold_node)
+
+        # --------------- Call ---------------
+
+        # Add the correct amount to the pot based on the action
+        pot_after_action = parent_node.pot
+
+        # Only add 10 if the big blind does not call after the small blind limps
+        if not parent_node.is_special_call_node():
+            pot_after_action += self.SMALL_BLIND
+
+        action_node = BettingNode(player=next_player,
+                                    action='call',
+                                    pot=pot_after_action,
+                                    parent=parent_node,
+                                    raise_count=parent_node.raise_count,
+                                    hole_cards=self.hole_cards,
+                                    community_cards=self.community_cards,
+                                    history=[*parent_node.history, 'call'],
+                                    dist=self.hand_dist)
+
+        parent_node.add_child(action_node)
+        
+        # Betting only continues on raise or if small blind limps
+        if not action_node.is_terminal:
+            self.generate_children(action_node)
+
+        # --------------- Raise ---------------
+
+        if does_raise:
+            # Only add 10 if the big blind is raising after a limp
+            if parent_node.is_special_call_node():
+                pot_after_action += self.SMALL_BLIND
+
+            # Add 20 if they raise (see + 10, raise + 10)
+            else:
+                pot_after_action += self.BIG_BLIND
+
+            # Create a node for the selected action
+            action_node = BettingNode(player=next_player,
+                                        action='raise',
+                                        pot=pot_after_action,
+                                        parent=parent_node,
+                                        raise_count=parent_node.raise_count + 1,
+                                        hole_cards=self.hole_cards,
+                                        community_cards=self.community_cards,
+                                        history=[*parent_node.history, 'raise'],
+                                        dist=self.hand_dist)
+
+            parent_node.add_child(action_node)
+
+            # Betting only continues on raise or if small blind limps
+            if not action_node.is_terminal:
+                self.generate_children(action_node)
+
+        value_sum = sum(map(lambda node: node.value, parent_node.children))
+        if does_raise:
+            parent_node.value = value_sum / 3
+        else:
+            parent_node.value = value_sum / 2
     
     # Calculate the number of nodes in the tree
     def recursive_children_count(self, node:BettingNode):
@@ -257,24 +280,26 @@ class LimitPokerTree:
         children = self.root.children
         odds = [child.value for child in children]
         total = sum(odds)
+        if total == 0:
+            return 'call'
         odds = [x/total for x in odds]
+        #print(odds)
         cumulativeOdds = []
-        for i in range(len(odds)):
+        lenOdds = len(odds)
+        for i in range(lenOdds):
             cumulativeOdds.append(sum(odds[0:i+1]))
         sample = random.uniform(0,1)
         i = 0
-        while not i > len(odds) - 1 and sample >= cumulativeOdds[i]:
+        while not i > lenOdds - 1 and sample >= cumulativeOdds[i]:
             i += 1
-        # print(sample)
-        # print(cumulativeOdds)
         if i == 0:
-            # print('fold')
+            #print('fold')
             return 'fold'
         if i == 1:
-            # print('call')
+            #print('call')
             return 'call'
         if i == 2:
-            # print('raise')
+            #print('raise')
             return 'raise'
 
         
