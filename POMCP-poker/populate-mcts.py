@@ -1,3 +1,4 @@
+import copy
 import random
 import math
 import sys
@@ -43,9 +44,9 @@ class SearchTree:
         else:
             return math.sqrt(math.log(self.visit) / child.visit)
 
-class POMCP():
+class MCTS():
     """
-    Combines Monte-Carlo belief state updates with PO-UCT Algorithm
+    MCTS for Poker in pypoker engine
     """
     def __init__(self,
                  discount=0.8,
@@ -59,14 +60,15 @@ class POMCP():
         self.epsilon = epsilon
         self.explore = explore
         self.n_particles = n_particles
-        self.tree = SearchTree() # This is h
+        self.tree = SearchTree()
         self.emulator = None
         self.timeout = 1_000_000
 
     # Search module
     def search(self, state=None):
         # Repeat Simulations until timeout
-        for _ in range(self.timeout):
+        for t in range(self.timeout):
+            print(t)
             if state == None:
                 # Sample an initial state (observation) and get the initialized pypoker emulator
                 state, self.emulator = State.random_state()  # s ~ I(s_0=s)
@@ -88,7 +90,7 @@ class POMCP():
             child = max(tree.children.values(), key=lambda child: child.value + self.explore * tree.ucb(child))
             # Since some children may not have been initialized with state or valid actions
             if child.state == None:
-                next_game_state , _ = from_state_action_to_state(tree.state, child.action)
+                next_game_state , _ = from_state_action_to_state(self.emulator, tree.state.game_state, child.action)
                 child.state = State.from_game_state(next_game_state)
             if child.valid_actions == None:
                 child.valid_actions = get_valid_actions(child.state.game_state)
@@ -97,37 +99,36 @@ class POMCP():
         # Now tree is assumed to be a leaf node
         # Check if the node has been traversed
         if tree.visit == 0:
+            # print("---------ROLLOUT 1------------")
             reward = self.rollout(tree.state, self.emulator)
+            # print("---------END ROLLOUT------------")
         else:
-            if tree.state == None:
-                print("bad")
-                exit()
-            if tree.valid_actions == None:
-                print('bad')
-                exit()
-                tree.valid_actions = get_valid_actions(tree.state.game_state)
-                
             # If node has been visited, expand the tree and perform rollout
             tree.expand(tree.valid_actions)
 
             # Rollout on first child, other children will eventually get rolled out via UCB1
             action, child_tree = next(iter(tree.children.items()))
+            # print("-------------------------------")
+            # print(f"==>> tree.player: {tree.player}")
+            # print(f"==>> tree.action: {tree.action}")
+            # print(f"==>> tree.visit: {tree.visit}")
+            # print(f"==>> tree.value: {tree.value}")
+            # print(f"==>> tree.children: {tree.children}")
+            # print(f"==>> tree.state: {tree.state}")
+            # print(f"==>> tree.valid_actions: {tree.valid_actions}")
+            # print(f"==>> ROUND FINISHED: {is_round_finish(tree.state.game_state)}")
+            # print("-------------------------------")
 
-            print(f"==>> tree.player: {tree.player}")
-            print(f"==>> tree.action: {tree.action}")
-            print(f"==>> tree.visit: {tree.visit}")
-            print(f"==>> tree.value: {tree.value}")
-            print(f"==>> tree.children: {tree.children}")
-            print(f"==>> tree.state: {tree.state}")
-            print(f"==>> tree.valid_actions: {tree.valid_actions}")
             # Extract resulting state for child node after performing action from parent node
-            next_game_state , _ = from_state_action_to_state(tree.state, action)
+            next_game_state , _ = from_state_action_to_state(self.emulator, tree.state.game_state, action)
 
             tree = child_tree
             tree.state = State.from_game_state(next_game_state)
             tree.valid_acitons = get_valid_actions(next_game_state)
 
+            # print("---------ROLLOUT 2------------")
             reward = self.rollout(tree.state, self.emulator)
+            # print("---------END ROLLOUT------------")
 
         # Do backpropogation up the tree
         self.backup(tree, reward)
@@ -153,6 +154,7 @@ class POMCP():
         
     # NOTE: THIS WORKS
     def rollout(self, state: State, emulator: Emulator):
+        emulator = copy.copy(emulator)
         cur_stack = state.game_state["table"].seats.players[0].stack
         end_game_state, events = emulator.run_until_round_finish(state.game_state)
         
@@ -160,6 +162,8 @@ class POMCP():
         return reward
 
 def is_round_finish(game_state):
+    # print(f"==>> Const.Street.FINISHED: {Const.Street.FINISHED}")
+    # print(f"==>> game_state['street']: {game_state["street"]}")
     return game_state["street"] != Const.Street.FINISHED
 
 if __name__ == '__main__':
@@ -167,11 +171,11 @@ if __name__ == '__main__':
     import pprint
     pp = pprint.PrettyPrinter(indent=2)
 
-    state, emulator = State.random_state()
+    # state, emulator = State.random_state()
     # game_state, msg = RoundManager.apply_action(state.game_state, "call")
-    pomcp = POMCP()
-    pomcp.search()
-    pp.pprint(pomcp.rollout(state, emulator))
+    mcts = MCTS()
+    mcts.search()
+    # pp.pprint(pomcp.rollout(state, emulator))
     
     # num_player = 2
     # max_round = 1000

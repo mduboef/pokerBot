@@ -111,8 +111,10 @@ def extract_valid_actions(valid_actions: list[dict]) -> list[str]:
     extracted_actions = [action_dict['action'] for action_dict in valid_actions]
     return extracted_actions
 
-def from_state_action_to_state(state: State, action: str):
-    new_game_s, messages = RoundManager.apply_action(state.game_state, action)
+def from_state_action_to_state(emulator: Emulator, game_state: dict, action: str):
+    # TODO: check if emulator or RoundManger is correct since they both have apply_action()
+    # MCTS works with RoundManager
+    new_game_s, messages = emulator.apply_action(game_state, action)
     return new_game_s, messages
 
 # Function to generate a random game state given current observation

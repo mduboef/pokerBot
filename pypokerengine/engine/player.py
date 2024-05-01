@@ -67,9 +67,6 @@ class Player:
     self.action_histories.append(history)
 
   def save_street_action_histories(self, street_flg):
-    print(f"==>> self.round_action_histories: {self.round_action_histories}")
-    print(f"==>> street_flg: {street_flg}")
-
     self.round_action_histories[street_flg] = self.action_histories
     self.action_histories = []
 
