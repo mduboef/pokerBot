@@ -22,6 +22,9 @@ class RandomPlayer(BasePokerPlayer):
     else:
       call_action_info = valid_actions[0]
     action = call_action_info["action"]
+    #if action == 'fold':
+    #  print("RANDOM: FOLD")
+    #  print()
     return action  # action returned here is sent to the poker engine
 
   def receive_game_start_message(self, game_info):

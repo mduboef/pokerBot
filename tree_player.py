@@ -16,6 +16,8 @@ class TreePlayer(BasePokerPlayer):
     tree.build_tree()
     action_choice = tree.getNodeAction()
     # print(timeit.default_timer() - start)
+    #for key in action_histories.keys():
+    #  print(action_histories[key])
     return action_choice
 
   def receive_game_start_message(self, game_info):

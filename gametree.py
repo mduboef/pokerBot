@@ -2,6 +2,11 @@ import itertools
 import random
 # import pypokerengine.handprobability as handprobability
 import handprobability
+from numpy.random import choice
+
+
+foldWeight = .8
+raiseWeight = .2
 
 class BettingNode:
     def __init__(self,
@@ -64,13 +69,10 @@ class BettingNode:
     def evaluation(self):
         # h_1(x) (expected value of pot)
         pot = self.pot
-        full_result_dict = self.dist
-        win_loss = full_result_dict['WinLossTie']
-        print(win_loss)
         if self.action == 'call':
-            value = (win_loss[0])
+            value = (self.dist[2] + self.dist[0])*pot
         if self.action == 'fold':
-            value = (win_loss[1])
+            value = (self.dist[1])*pot
 
         # h_2(x)
         # ...
@@ -157,6 +159,7 @@ class LimitPokerTree:
         self.raise_count = sum([1 for r in history if r == 'raise'])
 
         self.hand_dist = handprobability.getWinLossTieOdds(self.hole_cards, self.community_cards, 100, 3000)
+        self.win_loss = self.hand_dist['WinLossTie']
 
     def build_tree(self):
         # Do not calculate a tree if the last move was a fold
@@ -171,7 +174,7 @@ class LimitPokerTree:
                                 community_cards=self.community_cards,
                                 raise_count=self.raise_count,
                                 history=self.history,
-                                dist=self.hand_dist)
+                                dist=self.win_loss)
 
         # Generate a tree
         if not self.root.is_terminal:
@@ -206,7 +209,7 @@ class LimitPokerTree:
                                 hole_cards=self.hole_cards,
                                 community_cards=self.community_cards,
                                 history=[*parent_node.history, 'fold'],
-                                dist=self.hand_dist)
+                                dist=self.win_loss)
 
         parent_node.add_child(fold_node)
 
@@ -227,7 +230,7 @@ class LimitPokerTree:
                                     hole_cards=self.hole_cards,
                                     community_cards=self.community_cards,
                                     history=[*parent_node.history, 'call'],
-                                    dist=self.hand_dist)
+                                    dist=self.win_loss)
 
         parent_node.add_child(action_node)
         
@@ -255,7 +258,7 @@ class LimitPokerTree:
                                         hole_cards=self.hole_cards,
                                         community_cards=self.community_cards,
                                         history=[*parent_node.history, 'raise'],
-                                        dist=self.hand_dist)
+                                        dist=self.win_loss)
 
             parent_node.add_child(action_node)
 
@@ -278,29 +281,45 @@ class LimitPokerTree:
 
     def getNodeAction(self):
         children = self.root.children
+        #for child in self.root.children:
+        #    print(child.action, child.value)
+        
         odds = [child.value for child in children]
+        #print(odds)
         total = sum(odds)
         if total == 0:
             return 'call'
         odds = [x/total for x in odds]
-        #print(odds)
         cumulativeOdds = []
         lenOdds = len(odds)
-        for i in range(lenOdds):
-            cumulativeOdds.append(sum(odds[0:i+1]))
-        sample = random.uniform(0,1)
-        i = 0
-        while not i > lenOdds - 1 and sample >= cumulativeOdds[i]:
-            i += 1
-        if i == 0:
-            #print('fold')
-            return 'fold'
-        if i == 1:
-            #print('call')
-            return 'call'
-        if i == 2:
-            #print('raise')
-            return 'raise'
+        #for i in range(lenOdds):
+        #    cumulativeOdds.append(sum(odds[0:i+1]))
+        #sample = random.uniform(0,1)
+        #i = 0
+        #print("odds:", odds)
+        # print(cumulativeOdds)
+        
+        #while not i > lenOdds - 1 and sample >= cumulativeOdds[i]:
+        #    i += 1
+        #if i == 0:
+        #    print('fold')
+        #    print()
+        #    return 'fold'
+        #if i == 1:
+        #    print('call')
+        #    print()
+        #    return 'call'
+        #if i == 2:
+        #    print('raise')
+        #    print()
+        #    return 'raise'
+        #print(odds)
+        if len(odds) < 3:
+            odds.append(0)
+        action = choice(['fold', 'call', 'raise'], 1, p=odds)
+        #print(action)
+        #print()
+        return action
 
         
 
@@ -308,5 +327,6 @@ class LimitPokerTree:
 
 if __name__ == '__main__':
     tree = LimitPokerTree(["C6", "DK"], [], [], 30)
+    print(tree.win_loss)
     tree.build_tree()
     tree.getNodeAction()

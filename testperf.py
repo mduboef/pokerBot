@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 
 """ =========== *Remember to import your agent!!! =========== """
 from randomplayer import RandomPlayer
+from raise_player import RaisedPlayer
 from tree_player import TreePlayer
 # from smart warrior import SmartWarrior
 """ ========================================================= """
@@ -78,7 +79,7 @@ if __name__ == '__main__':
 	#name1, agent1, name2, agent2 = parse_arguments()
 	start = time.time()
 	#testperf(name1, agent1, name2, agent2, 3, 100)
-	testperf("Tree Agent", TreePlayer(), "Random Agent", RandomPlayer(), 3, 100)
+	testperf("Tree Agent", TreePlayer(), "Random Agent", RaisedPlayer(), 3, 100)
 	end = time.time()
 
 	print("\n Time taken to play: %.4f seconds" %(end-start))
