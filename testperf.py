@@ -9,7 +9,8 @@ from argparse import ArgumentParser
 
 """ =========== *Remember to import your agent!!! =========== """
 from randomplayer import RandomPlayer
-# from smartwarrior import SmartWarrior
+from tree_player import TreePlayer
+# from smart warrior import SmartWarrior
 """ ========================================================= """
 
 """ Example---To run testperf.py with random warrior AI against itself. 
@@ -33,7 +34,7 @@ def testperf(agent_name1, agent1, agent_name2, agent2):
 	config = setup_config(max_round=max_round, initial_stack=initial_stack, small_blind_amount=smallblind_amount)
 	
 	# Register players
-	config.register_player(name=agent_name1, algorithm=RandomPlayer())
+	config.register_player(name=agent_name1, algorithm=TreePlayer())
 	config.register_player(name=agent_name2, algorithm=RandomPlayer())
 	# config.register_player(name=agent_name1, algorithm=agent1())
 	# config.register_player(name=agent_name2, algorithm=agent2())
@@ -42,7 +43,7 @@ def testperf(agent_name1, agent1, agent_name2, agent2):
 	# Start playing num_game games
 	for game in range(1, num_game+1):
 		print("Game number: ", game)
-		game_result = start_poker(config, verbose=0)
+		game_result = start_poker(config, verbose=1)
 		agent1_pot = agent1_pot + game_result['players'][0]['stack']
 		agent2_pot = agent2_pot + game_result['players'][1]['stack']
 

@@ -1,6 +1,6 @@
 import itertools
 import random
-import handprobability
+import pypokerengine.handprobability as handprobability
 
 class BettingNode:
     def __init__(self,
@@ -169,7 +169,7 @@ class LimitPokerTree:
         if not self.root.is_terminal:
             self.generate_children(self.root)
 
-        self.recursive_children_count(self.root)
+        # self.recursive_children_count(self.root)
 
         return self.root
     
