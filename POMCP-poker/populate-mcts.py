@@ -16,43 +16,25 @@ from pypokerengine.engine.poker_constants import PokerConstants as Const
 
 from randomplayer import RandomPlayer
 
-class Particle:
-    # TODO: Mason - we need to adjust our state and observation space by adding more features. I think we need information about
-    # what the opposing agent has done already (e.g., call, fold, or raise). this should be available in round_state. We need this b/c
-    # we need more partial information about the other player otherwise we can't generate a decent probability distribution of observations
-    # over states.
-    # TODO: mason - add call and raise cointer of opponnent to better infer the belief state.
-    def __init__(self, obs: Observation, s: State):
-        self.obs = obs
-        self.s = s
-
-    @classmethod
-    def from_obs(cls, obs):
-        """
-        Samples a possible state from a uniform distribution given an observation
-        """
-        return cls(obs, obs.sample_state())
-    
-    @classmethod
-    def from_s(cls, s):
-        """
-        Gets the observation from the state
-        """
-        return cls(s.get_observation(), s)
-
 class SearchTree:
-    def __init__(self, obs=None, action=None, visit=1, value=0):
-        self.obs = obs # Observation
-        self.action = action
-        self.visit = visit
-        self.value = value
-        self.children = {}
-        self.actions = ['fold', 'call', 'raise'] # Default valid actions NOTE this will change in rounds
+    def __init__(self, player = None, state=None, action=None, visit=0, value=0, parent=None):
+        self.player: str = player    # "main" or "opp"
+        self.state: State = state          # Observation
+        self.action: str = action    # Action by the opponent that was taken in parent
+        self.visit: int = visit      # Number of visits
+        self.value: int = value      # Value of node
+        self.parent: SearchTree = parent 
+        self.children: dict = {}
+        self.valid_actions: list[str] = ['fold', 'call', 'raise'] # Default valid actions NOTE this will change in rounds
 
-    def expand(self, valid_actions):
+    def expand(self, valid_actions: list[str]):
         for action in valid_actions:
-            # TODO: overwrite possible actions for child node. Check when 
-            self.children[action['action']] = SearchTree(action=action['action'])
+            if self.player == "main":
+                player = "opp"
+            else:
+                player = "main"
+            # TODO: overwrite possible actions for child node. Check when ....
+            self.children[action] = SearchTree(player=player, action=action, parent=self, valid_actions=...)
 
     def ucb(self, child):
         log_div = math.log(self.visit) / child.visit
@@ -67,84 +49,78 @@ class POMCP():
                  depth=0,
                  epsilon=1e-7,
                  explore=7,
-                 n_particles=128,
-                 reinvigoration=16):
+                 n_particles=128):
 
         self.discount = discount
         self.depth = depth
         self.epsilon = epsilon
         self.explore = explore
         self.n_particles = n_particles
-        self.reinvigoration = reinvigoration
-        # self.rollout_policy = RandomPlayer()
         self.tree = SearchTree() # This is h
         self.emulator = None
-        self.timeout = 1000
+        self.timeout = 1_000_000_000
 
     # Search module
     def search(self, state=None):
         # Repeat Simulations until timeout
         for _ in range(self.timeout):
             if state == None:
+                # Sample an initial state (observation) and get the initialized pypoker emulator
                 state, self.emulator = State.random_state()  # s ~ I(s_0=s)
             self.simulate(state, self.tree, 0)
-        # Get best action
-        action, _ = self.SearchBest(-1, UseUCB=False)
-        return action
+        return
 
     def simulate(self, state, tree, depth):
         """
-        Simulation performed using the PO-UCT Algorithm
+        Simulation performed using the UCT Algorithm
         """
-        assert tree.obs != None
-        tree.obs = state
+        if tree.state == None:
+            tree.state = state
         
-        if (self.discount**depth < self.epsilon) and  depth >= self.max_depth:
-            return 0
+        # Keep going down tree until a node with no children is found
+        while tree.children:
+            # Replace current node with the child that maximized UCB1(s) value
+            child = max(tree.children, key=lambda child: child.value + self.explore * tree.ucb(child))
+            tree = child
 
-        # If leaf node
-        if not tree.children:
-            tree.expand(tree.actions)
-            # Lazy Evaluation
-            discounted_return = self.rollout(tree, depth)
-            # NOTE: Error in POMCP paper. This should be included
+        # Now tree is assumed to be a leaf node
+        # Check if the node has been traversed
+        if tree.visit == 0:
+            reward = self.rollout(tree, depth)
+        else:
+            # If not, expand the tree and perform rollout
+            tree.expand(tree.valid_actions)
+            # Rollout on first child, other children will eventually get rolled out via UCB1
+            tree = tree.child[0]
+            # TODO: extract state from simulated child node using emulator
+            # TODO: Finish from_state_action_to_state in utils()
+            tree.state = extracted_state
+            reward = self.rollout(tree, depth)
+        # Do backpropogation up the tree
+        self.backup(tree, reward)
+
+        return
+    
+    @staticmethod
+    def backup(tree, reward):
+        """
+        Backpropogation step
+        Assumption: 0-sum 2-player game
+        """
+        while tree is not None:
             tree.visit += 1
-            tree.value = discounted_return
-            return discounted_return
-
-        # This is ha
-        children = filter(lambda child: child.action in tree.actions, tree.children)
-        # Upper Confidence Bound (UCB) update
-        child = max(children, key=lambda child: child.value + self.explore * tree.ucb(child))
-        # Argmax
-        action = child.action
-
-        # Black-box step
-        game_state = restore_game_state(state.round_state)
-        new_game_s, messages = RoundManager.apply_action(game_state, action)
-        new_game_s, messages = RoundManager.apply_action(game_state, action)
-        # Convert next game state to State() object
-        new_s = State.from_game_state(new_game_s)
-        new_part = Particle.from_s(state)
-        # TODO: Edit Heursitic since rollout gives different rewards (could be off balanced)
-        heuristic = eval_hand(new_s.hole_card_main, new_s.community_card) - eval_hand(new_s.hole_card_op, new_s.community_card)
-        reward = heuristic + self.discount * self.simulate(new_part, child, depth + 1)
-
-        # Tree updates
-        tree.visit += 1
-        child.visit += 1
-        child.value += (reward - child.value) / child.visit
-        return reward
-
-    # NOTE: Finished
+            tree.value += reward
+            # Alternate the reward for 0-sum 2-player poker
+            reward = -reward
+            tree = tree.parent
+        
+    # NOTE: THIS WORKS
     def rollout(self, state, emulator):
-        # Black-box step
         cur_stack = state.game_state["table"].seats.players[0].stack
         end_game_state, events = emulator.run_until_round_finish(state.game_state)
         
         reward = end_game_state["table"].seats.players[0].stack - cur_stack
-        print(reward)
-        return reward  # Assuming this is the reward
+        return reward
 
 def is_round_finish(game_state):
     return game_state["street"] != Const.Street.FINISHED
@@ -152,7 +128,6 @@ def is_round_finish(game_state):
 if __name__ == '__main__':
     from pypokerengine.api.emulator import Emulator
     import pprint
-    # TODO Finish this emulator crap
     pp = pprint.PrettyPrinter(indent=2)
 
     state, emulator = State.random_state()

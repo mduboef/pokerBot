@@ -90,33 +90,6 @@ class State:
 
         # Community cards is empty
         return cls(hoe_cards_0, hoe_cards_1, [], game_state), emulator
-    
-
-    # def generate_random_initial_state(nb_players=2, initial_stack=1000, small_blind_amount=10):
-    #     config = setup_config(max_round=1, initial_stack=initial_stack, small_blind_amount=small_blind_amount)
-        
-    #     # Register players
-    #     for i in range(nb_players):
-    #         config.register_player(name=f"Player{i+1}", algorithm=RandomPlayer())
-
-    #     # Generate a random deck and shuffle it
-    #     deck = gen_deck()
-    #     random.shuffle(deck)
-
-    #     # Distribute two hole cards to each player
-    #     player_hole_cards = {f"Player{i+1}": [deck.draw_card(), deck.draw_card()] for i in range(nb_players)}
-
-    #     # Generate random community cards (for the flop, turn, and river)
-    #     community_cards = [deck.draw_card() for _ in range(5)]  # Three for flop, one for turn, one for river
-
-    #     # Start the game with this setup
-    #     game_result = start_poker(config, verbose=1)
-
-    #     # Printing initial state details
-    #     print("Player Hole Cards:", player_hole_cards)
-    #     print("Community Cards:", community_cards)
-        
-    #     return game_result['game_state']
 
 def get_current_player_id(round_state):
     return round_state['next_player']
@@ -243,21 +216,9 @@ def to_game_observation(round_state: dict, hole_card: list) -> str:
     game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join(player2_cards)}"
     return game_state
 
-# def eval_hole_cards(hole_card):
-#     score = 0
-#     card_1, card_2 = hole_card[0], hole_card[1]
-#     is_same_suit = card_1[0] == card_2[0]
-#     is_pair = card_1[1] == card_2[1]
-#     is_ace = card_1[1] == 'A' or card_2[1] == 'A'
+def from_state_action_to_state(emulator: Emulator, state: State, action: str):
+    # TODO mason - FINISH THIS
 
-#     is_high_pair = is_pair and (card_1[1] == 'A' or card_1[1] == 'K' or card_1[1] == 'Q')
-#     is_mid_pair = is_pair and (card_1[1] == 'J' or card_1[1] == 'T')
-#     if is_high_pair:
-#         score += 10
-#     elif is_mid_pair:
-#         score += 9
-#     elif is_pair:
-#         score += 8
     
 
 
