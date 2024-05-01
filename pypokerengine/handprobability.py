@@ -309,9 +309,9 @@ def getWinLossTieOdds(hole, community, ms_limit, iters):
     handDict.update({'WinLossTie': toReturn})
     return handDict
 
-if __name__ == '__main__':
-    for i in range(1):
+# if __name__ == '__main__':
+#     for i in range(1):
         
-        t = timeit.timeit(lambda: getWinLossTieOdds(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
-        print(t)
-        print(getWinLossTieOdds(['C6', 'DK'], [], 50, 3000))
+#         t = timeit.timeit(lambda: getWinLossTieOdds(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
+#         print(t)
+#         print(getWinLossTieOdds(['C6', 'DK'], [], 50, 3000))
