@@ -2,8 +2,10 @@ import random
 from pypokerengine.api.emulator import Emulator
 from pypokerengine.engine.card import Card
 from pypokerengine.engine.deck import Deck
+from pypokerengine.engine.message_builder import MessageBuilder
 from pypokerengine.utils.card_utils import gen_deck, gen_cards
 from randomplayer import RandomPlayer
+from pypokerengine.engine.round_manager import RoundManager
 
 #TODO: Think about ways to make this smarter like configuring the random distributions away from random uniform across all potential values (e.g., skewed gaussian)
 
@@ -94,22 +96,24 @@ class State:
 def get_current_player_id(round_state):
     return round_state['next_player']
 
-def calculate_valid_actions(round_state, player_id):
-    current_player = round_state['seats'][player_id]
-    current_stack = current_player['stack']
-    current_call_amount = round_state['call_amount']
-    min_raise, max_raise = round_state['min_raise'], round_state['max_raise']
+def get_valid_actions(game_state: dict) -> list[dict]:
+    # Extracted from run_until_round_finish()
+    next_player_pos = game_state["next_player"]
+    msg = MessageBuilder.build_ask_message(next_player_pos, game_state)["message"]
+    extracted_valid_actions = extract_valid_actions(msg["valid_actions"])
+    return extracted_valid_actions
 
-    actions = []
-    actions.append({'action': 'fold'})
+def extract_valid_actions(valid_actions: list[dict]) -> list[str]:
+    """
+    Pypoker engine has actions: {'action': 'call'}
+    This function extracts the action strings
+    """
+    extracted_actions = [action_dict['action'] for action_dict in valid_actions]
+    return extracted_actions
 
-    if current_call_amount > 0:
-        if current_stack >= current_call_amount:
-            actions.append({'action': 'call'})
-        if current_stack >= min_raise:
-            actions.append({'action': 'raise'})
-
-    return actions
+def from_state_action_to_state(state: State, action: str):
+    new_game_s, messages = RoundManager.apply_action(state.game_state, action)
+    return new_game_s, messages
 
 # Function to generate a random game state given current observation
 def generate_random_game_state(round_state, hole_card: list) -> str:
@@ -198,27 +202,6 @@ def generate_random_game_state(round_state, hole_card: list) -> str:
     # Combine all parts into the final encoded string
     game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join(player2_cards)}"
     return game_state
-
-def to_game_observation(round_state: dict, hole_card: list) -> str:
-    # Extract community cards and ensure there are always 5 cards, filled with "00" if fewer
-    community_cards = round_state['community_card'] + ['00'] * (5 - len(round_state['community_card']))
-    
-    # Extract the pot amount from the main pot
-    pot = round_state['pot']['main']['amount']
-    
-    # Extract the current round count
-    rounds = round_state['round_count']
-    
-    player1_cards = hole_card
-    player2_cards = ['00', '00']  # Placeholder since actual cards are unknown
-    
-    # Combine all parts into the final encoded string
-    game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join(player2_cards)}"
-    return game_state
-
-def from_state_action_to_state(emulator: Emulator, state: State, action: str):
-    # TODO mason - FINISH THIS
-
     
 
 
