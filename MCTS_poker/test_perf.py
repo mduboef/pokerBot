@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 
 """ =========== *Remember to import your agent!!! =========== """
 from randomplayer import RandomPlayer
-from mcts_player import MCTSPlayer
+from MCTS_poker.mcts_player import MCTSPlayer
 """ ========================================================= """
 
 """ Example---To run testperf.py with random warrior AI against itself. 

@@ -2,7 +2,7 @@ import math
 import sys
 
 from blackjack.utils import State
-from mcts_player import MCTSPlayer
+from MCTS_poker.mcts_player import MCTSPlayer
 sys.path.insert(0, './pypokerengine/api/')
 import game
 setup_config = game.setup_config

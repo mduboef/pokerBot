@@ -106,7 +106,7 @@ class MCTS():
             # TODO: Some state_info is "|" with no community cards or hole cards because the player folded in prior action
         return state_actions
 
-    def simulate(self, state, tree, depth):
+    def simulate(self, state, tree):
         """
         Simulation performed using the UCT Algorithm
         """
@@ -118,7 +118,8 @@ class MCTS():
             tree.valid_actions = get_valid_actions(state.game_state)
 
         # Add the state and tree object to dictionary
-        nodes = add_state_tree_to_external(nodes, tree.state.state_info, tree)
+        if tree.player == "main":
+            nodes = add_state_tree_to_external(nodes, tree.state.state_info, tree)
 
         # Keep going down tree until a node with no children is found
         while tree.children:
@@ -134,7 +135,8 @@ class MCTS():
             tree = child
             
             # Add the state and tree object to dictionary
-            nodes = add_state_tree_to_external(nodes, tree.state.state_info, tree)
+            if tree.player == "main":
+                nodes = add_state_tree_to_external(nodes, tree.state.state_info, tree)
 
         # Now tree is assumed to be a leaf node
         # Check if the node has been traversed
@@ -172,7 +174,8 @@ class MCTS():
             tree.valid_actions = get_valid_actions(next_game_state)
 
             # Add the state and tree object to dictionary
-            nodes = add_state_tree_to_external(nodes, tree.state.state_info, tree)
+            if tree.player == "main":
+                nodes = add_state_tree_to_external(nodes, tree.state.state_info, tree)
 
             reward = self.rollout(tree.state, self.emulator)
 

@@ -32,6 +32,8 @@ class State:
 
     @staticmethod
     def get_state_info_str(hole_cards, community_cards):
+        # Pad Community cards with 0s
+        community_cards = community_cards + ['00'] * (5 - len(community_cards))
         state_info = f"{''.join(community_cards)}|{''.join(hole_cards)}"
         # Sort the card since done when populating dictionary
         sorted_card_string = sort_cards(state_info)
