@@ -1,4 +1,6 @@
 import random
+import sys
+sys.path.append("./")
 from pypokerengine.api.emulator import Emulator
 from pypokerengine.engine.card import Card
 from pypokerengine.engine.deck import Deck
@@ -30,7 +32,10 @@ class State:
 
     @staticmethod
     def get_state_info_str(hole_cards, community_cards):
-        return f"{''.join(community_cards)}|{''.join(hole_cards)}"
+        state_info = f"{''.join(community_cards)}|{''.join(hole_cards)}"
+        # Sort the card since done when populating dictionary
+        sorted_card_string = sort_cards(state_info)
+        return sorted_card_string
     
     @classmethod
     def random_state(self):
@@ -89,6 +94,7 @@ def get_current_player_id(round_state):
 def get_valid_actions(game_state: dict) -> list[dict]:
     # Extracted from run_until_round_finish()
     next_player_pos = game_state["next_player"]
+    # print(f"==>> next_player_pos: {next_player_pos}")
     msg = MessageBuilder.build_ask_message(next_player_pos, game_state)["message"]
     extracted_valid_actions = extract_valid_actions(msg["valid_actions"])
     assert extract_valid_actions != None, "valid actions should not be none"
@@ -108,95 +114,40 @@ def from_state_action_to_state(emulator: Emulator, game_state: dict, action: str
     new_game_s, messages = emulator.apply_action(game_state, action)
     return new_game_s, messages
 
-# Function to generate a random game state given current observation
-def generate_random_game_state(round_state, hole_card: list) -> str:
+def add_state_tree_to_external(nodes: dict, state_info: str, tree) -> dict:
     """
-    Outputs the same format from generate_random_game_observation() and generate_random_game_state()
-    Input is of the format:
-    { 'action_histories': { 'flop': [ { 'action': 'RAISE',
-                                    'add_amount': 40,
-                                    'amount': 40,
-                                    'paid': 40,
-                                    'uuid': 'bzggcmuaoypqacyvhaigyh'},
-                                  { 'action': 'RAISE',
-                                    'add_amount': 40,
-                                    'amount': 80,
-                                    'paid': 80,
-                                    'uuid': 'viqojmltetkdspzyvgljuy'},
-                                  { 'action': 'CALL',
-                                    'amount': 80,
-                                    'paid': 40,
-                                    'uuid': 'bzggcmuaoypqacyvhaigyh'}],
-                        'preflop': [ { 'action': 'SMALLBLIND',
-                                       'add_amount': 20,
-                                       'amount': 20,
-                                       'uuid': 'bzggcmuaoypqacyvhaigyh'},
-                                     { 'action': 'BIGBLIND',
-                                       'add_amount': 20,
-                                       'amount': 40,
-                                       'uuid': 'viqojmltetkdspzyvgljuy'},
-                                     { 'action': 'RAISE',
-                                       'add_amount': 40,
-                                       'amount': 80,
-                                       'paid': 60,
-                                       'uuid': 'bzggcmuaoypqacyvhaigyh'},
-                                     { 'action': 'CALL',
-                                       'amount': 80,
-                                       'paid': 40,
-                                       'uuid': 'viqojmltetkdspzyvgljuy'}],
-                        'river': [],
-                        'turn': [ { 'action': 'CALL',
-                                    'amount': 0,
-                                    'paid': 0,
-                                    'uuid': 'bzggcmuaoypqacyvhaigyh'},
-                                  { 'action': 'CALL',
-                                    'amount': 0,
-                                    'paid': 0,
-                                    'uuid': 'viqojmltetkdspzyvgljuy'}]},
-    'big_blind_pos': 1,
-    'community_card': ['C7', 'CQ', 'HT', 'CT', 'CJ'],
-    'dealer_btn': 1,
-    'next_player': 0,
-    'pot': {'main': {'amount': 320}, 'side': []},
-    'round_count': 110,
-    'seats': [ { 'name': 'Your agent',
-                'stack': 12620,
-                'state': 'participating',
-                'uuid': 'bzggcmuaoypqacyvhaigyh'},
-                { 'name': 'Your agent',
-                'stack': 7060,
-                'state': 'participating',
-                'uuid': 'viqojmltetkdspzyvgljuy'}],
-    'small_blind_amount': 20,
-    'small_blind_pos': 0,
-    'street': 'river'}
+    Addes a state-tree pair to dictionary for optimal action decision-making 
+    that will be saved to json file which will be referenced during test-time 
     """
+    # TODO: worried that if tree.state.state_info already exists. Might have to merge the trees which will mess up the tree
+    # This is where I think POMCP solves this issue
+    # TODO: Should we save all the possible trees as a list?
+    # Sort the cards
+    sorted_card_str = sort_cards(state_info)
+    nodes[sorted_card_str] = tree
+    return nodes
+
+def sort_cards(card_string):
+    suits_order = {'C': 0, 'D': 1, 'H': 2, 'S': 3}
+    ranks_order = {str(n): n for n in range(2, 10)}
+    ranks_order.update({'T': 10, 'J': 11, 'Q': 12, 'K': 13, 'A': 14})
     
-    # Define suits, ranks, and generate the full deck of cards
-    suits = ['C', 'D', 'H', 'S']  # Clubs, Diamonds, Hearts, Spades
-    ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
-    deck = [f"{suit}{rank}" for rank in ranks for suit in suits]
-
-    # Extract community cards and ensure there are always 5 cards, filled with "00" if fewer
-    community_cards = round_state['community_card'] + ['00'] * (5 - len(round_state['community_card']))
-
-    # Remove known cards from deck (hole cards of player 1 and visible community cards)
-    known_cards = hole_card + [card for card in round_state['community_card'] if card != '00']
-    remaining_deck = [card for card in deck if card not in known_cards]
-
-    # Extract the pot amount from the main pot
-    pot = round_state['pot']['main']['amount']
-    # Extract the current round count
-    rounds = round_state['round_count']
-    player1_cards = hole_card
-    # Generate possible hole cards for player 2 from the remaining deck
-    player2_cards = random.sample(remaining_deck, 2)
-
-    # Combine all parts into the final encoded string
-    game_state = f"{''.join(community_cards)}|{str(pot).zfill(5)}|{str(rounds).zfill(5)}|{''.join(player1_cards)}|{''.join(player2_cards)}"
-    return game_state
+    def card_key(card):
+        # Extract rank and suit, e.g., 'H5' -> ('H', 5)
+        suit, rank = card[0], card[1:]
+        return (suits_order[suit], ranks_order[rank])
     
-
+    # Split the string by '|'
+    community, holes = card_string.split('|')
+    
+    # Sort community and hole cards
+    sorted_community = ''.join(sorted((community[i:i+2] for i in range(0, len(community), 2)), key=card_key))
+    sorted_holes = ''.join(sorted((holes[i:i+2] for i in range(0, len(holes), 2)), key=card_key))
+    
+    # Combine them back into a string with '|'
+    return f"{sorted_community}|{sorted_holes}"
 
 if __name__ == "__main__":
-    print(generate_random_game_state())
+    card_string = "H5H3CK|C3S3"
+    sorted_card_string = sort_cards(card_string)
+    print(sorted_card_string)  # Output: CKH3H5|C3S3

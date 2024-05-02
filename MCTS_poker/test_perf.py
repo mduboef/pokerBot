@@ -2,8 +2,7 @@ import math
 import sys
 
 sys.path.insert(0, './')
-from blackjack.utils import State
-from mcts_player import MCTSPlayer
+from MCTS_poker.utils import State
 sys.path.insert(0, './pypokerengine/api/')
 import game
 setup_config = game.setup_config
@@ -14,9 +13,7 @@ from argparse import ArgumentParser
 
 """ =========== *Remember to import your agent!!! =========== """
 from randomplayer import RandomPlayer
-# from pomcp_player_v3 import POMCPPlayer
-from pomcp_player import POMCPPlayer
-# from smartwarrior import SmartWarrior
+from mcts_player import MCTSPlayer
 """ ========================================================= """
 
 """ Example---To run testperf.py with random warrior AI against itself. 
@@ -27,8 +24,8 @@ $ python testperf.py -n1 "Random Warrior 1" -a1 RandomPlayer -n2 "Random Warrior
 def testperf(agent_name1, agent1, agent_name2, agent2):		
 
 	# Init to play 500 games of 1000 rounds
-	num_game = 1
-	max_round = 1
+	num_game = 20
+	max_round = 20
 	initial_stack = 1000
 	smallblind_amount = 10
 
