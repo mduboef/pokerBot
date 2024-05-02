@@ -11,6 +11,8 @@ from argparse import ArgumentParser
 from randomplayer import RandomPlayer
 from raise_player import RaisedPlayer
 from tree_player import TreePlayer
+from stump_player import StumpPlayer
+from evil_player import EvilPlayer
 # from smart warrior import SmartWarrior
 """ ========================================================= """
 
@@ -69,7 +71,7 @@ def testperf(agent_name1, agent1, agent_name2, agent2, num_games, max_rounds):
 def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('-n1', '--agent_name1', help="Name of agent 1", default="Your agent", type=str)
-    parser.add_argument('-a1', '--agent1', help="Agent 1", default=TreePlayer())
+    parser.add_argument('-a1', '--agent1', help="Agent 1", default=EvilPlayer())
     parser.add_argument('-n2', '--agent_name2', help="Name of agent 2", default="Other agent", type=str)
     parser.add_argument('-a2', '--agent2', help="Agent 2", default=RandomPlayer())
     args = parser.parse_args()
@@ -79,7 +81,7 @@ if __name__ == '__main__':
 	#name1, agent1, name2, agent2 = parse_arguments()
 	start = time.time()
 	#testperf(name1, agent1, name2, agent2, 3, 100)
-	testperf("Tree Agent", TreePlayer(), "Random Agent", RaisedPlayer(), 3, 100)
+	testperf("Evil Agent", EvilPlayer(), "Raised Agent", RaisedPlayer(), 10, 1000)
 	end = time.time()
 
 	print("\n Time taken to play: %.4f seconds" %(end-start))

@@ -5,6 +5,8 @@ import timeit
 class TreePlayer(BasePokerPlayer):
 
   def declare_action(self, valid_actions, hole_card, round_state):
+    print(round_state)
+    print()
     parsed_history = []
     action_histories = round_state['action_histories']
     rounds = list(action_histories.keys())
