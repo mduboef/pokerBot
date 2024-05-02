@@ -9,14 +9,17 @@ from pypokerengine.engine.seats import Seats
 from pypokerengine.players import BasePokerPlayer
 from pypokerengine.utils.card_utils import gen_cards, estimate_hole_card_win_rate
 # from pypokerengine.api.emulator import apply_action
-from blackjack.utils import Observation, State, from_state_action_to_state, get_valid_actions
+from utils import State, from_state_action_to_state, get_valid_actions
 from pypokerengine.engine.round_manager import RoundManager
 # from pypokerengine.engine.hand_evaluator import eval_hand
 from pypokerengine.utils.game_state_utils import restore_game_state
 from pypokerengine.engine.poker_constants import PokerConstants as Const
 from pypokerengine.api.emulator import Emulator
 from randomplayer import RandomPlayer
+import random as rand
 
+nodes = {}
+state_actions = {}
 class SearchTree:
     def __init__(self, player = None, state=None, action=None, visit=0, value=0, parent=None):
         self.player: str = player    # "main" or "opp"
@@ -30,6 +33,7 @@ class SearchTree:
         self.valid_actions: list[str] = None
 
     def expand(self, valid_actions: list[str]):
+        assert valid_actions != None, "valid actions should not be none"
         for action in valid_actions:
             if self.player == "main":
                 player = "opp"
@@ -62,7 +66,9 @@ class MCTS():
         self.n_particles = n_particles
         self.tree = SearchTree()
         self.emulator = None
-        self.timeout = 1_000_000
+        # self.timeout = 20
+        self.timeout = 100_000
+        # self.timeout = 1_000_000
 
     # Search module
     def search(self, state=None):
@@ -73,7 +79,33 @@ class MCTS():
                 # Sample an initial state (observation) and get the initialized pypoker emulator
                 state, self.emulator = State.random_state()  # s ~ I(s_0=s)
             self.simulate(state, self.tree, 0)
-        return
+        # Make a new hacshmap with state strings as keys and values as optimal actions
+        print(f"Number of nodes: {len(nodes.items())}")
+        for i, node in enumerate(nodes.items()):
+            if node[1].player == "opp":
+                continue
+            print(i)
+            # If node has no children, take a random action
+            r = rand.random()
+            if node[1].children == {}:
+                if r <= 0.5:
+                    action = node[1].valid_actions[1]
+                elif r<= 0.9 and len(node[1].valid_actions) == 3:
+                    action = node[1].valid_actions[2]
+                else:
+                    action = node[1].valid_actions[0]
+            # If at least one child has been traversed, then it has value
+            # We choose the child with maximal value
+            elif(any(hasattr(tree, 'visit') and getattr(tree, 'visit') == 0  for tree in node[1].children)):
+                action = max(node[1].children.values(), key=lambda child: child.value).action
+            # If all children have non-zero values use maximal value
+            # TODO: could make this better since redundant as above elif
+            else:
+                action = max(node[1].children.values(), key=lambda child: child.value).action
+            state_actions[node[0]] = action
+
+            # NOTE: Some state_info is "|" with no community cards or hole cards because the player folded in prior action
+        return state_actions
 
     def simulate(self, state, tree, depth):
         """
@@ -83,6 +115,9 @@ class MCTS():
             tree.state = state
         if tree.valid_actions == None:
             tree.valid_actions = get_valid_actions(state.game_state)
+        
+        # TODO: worried that if tree.state.state_info already exists. Might have to merge the trees which will mess up the tree
+        nodes[tree.state.state_info] = tree
         
         # Keep going down tree until a node with no children is found
         while tree.children:
@@ -94,7 +129,12 @@ class MCTS():
                 child.state = State.from_game_state(next_game_state)
             if child.valid_actions == None:
                 child.valid_actions = get_valid_actions(child.state.game_state)
+
             tree = child
+            
+            # TODO: worried that if tree.state.state_info already exists. Might have to merge the trees
+            nodes[tree.state.state_info] = tree
+            
 
         # Now tree is assumed to be a leaf node
         # Check if the node has been traversed
@@ -108,23 +148,27 @@ class MCTS():
 
             # Rollout on first child, other children will eventually get rolled out via UCB1
             action, child_tree = next(iter(tree.children.items()))
-            # print("-------------------------------")
-            # print(f"==>> tree.player: {tree.player}")
-            # print(f"==>> tree.action: {tree.action}")
-            # print(f"==>> tree.visit: {tree.visit}")
-            # print(f"==>> tree.value: {tree.value}")
-            # print(f"==>> tree.children: {tree.children}")
-            # print(f"==>> tree.state: {tree.state}")
-            # print(f"==>> tree.valid_actions: {tree.valid_actions}")
-            # print(f"==>> ROUND FINISHED: {is_round_finish(tree.state.game_state)}")
-            # print("-------------------------------")
+            print("-------------------------------")
+            print(f"==>> tree.player: {tree.player}")
+            print(f"==>> tree.action: {tree.action}")
+            print(f"==>> tree.visit: {tree.visit}")
+            print(f"==>> tree.value: {tree.value}")
+            print(f"==>> tree.children: {tree.children}")
+            print(f"==>> tree.state: {tree.state}")
+            print(f"==>> tree.valid_actions: {tree.valid_actions}")
+            print(f"==>> ROUND FINISHED: {is_round_finish(tree.state.game_state)}")
+            print("-------------------------------")
+
+            # Check if game finished
 
             # Extract resulting state for child node after performing action from parent node
             next_game_state , _ = from_state_action_to_state(self.emulator, tree.state.game_state, action)
-
             tree = child_tree
             tree.state = State.from_game_state(next_game_state)
-            tree.valid_acitons = get_valid_actions(next_game_state)
+            tree.valid_actions = get_valid_actions(next_game_state)
+
+            # TODO: worried that if tree.state.state_info already exists. Might have to merge the trees
+            nodes[tree.state.state_info] = tree
 
             # print("---------ROLLOUT 2------------")
             reward = self.rollout(tree.state, self.emulator)
@@ -152,7 +196,6 @@ class MCTS():
             
             tree = tree.parent
         
-    # NOTE: THIS WORKS
     def rollout(self, state: State, emulator: Emulator):
         emulator = copy.copy(emulator)
         cur_stack = state.game_state["table"].seats.players[0].stack
@@ -169,12 +212,22 @@ def is_round_finish(game_state):
 if __name__ == '__main__':
     from pypokerengine.api.emulator import Emulator
     import pprint
+    import pickle
+    import json
+
     pp = pprint.PrettyPrinter(indent=2)
 
     # state, emulator = State.random_state()
     # game_state, msg = RoundManager.apply_action(state.game_state, "call")
     mcts = MCTS()
-    mcts.search()
+    nodes = mcts.search()
+    # Saving the dictionary with State keys using pickle
+    # with open('search_tree_v2.pkl', 'wb') as f:
+    #     pickle.dump(nodes, f)
+       
+    with open('search_tree_v2.json', 'w') as f:
+        json.dump(nodes, f, indent=4)
+
     # pp.pprint(pomcp.rollout(state, emulator))
     
     # num_player = 2

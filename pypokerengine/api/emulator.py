@@ -75,8 +75,11 @@ class Emulator(object):
 
     def _start_next_round(self, game_state):
         game_finished = game_state["round_count"] == self.game_rule["max_round"]
+        # print(f"==>> self.game_rule['max_round']: {self.game_rule["max_round"]}")
+        # print(f"==>> game_state['round_count']: {game_state["round_count"]}")
         game_state, events = self.start_new_round(game_state)
         if Event.GAME_FINISH == events[-1]["type"] or game_finished:
+            #TODO: This is being encountered. I think this is due to stacks of players going to 0 or something similar
             raise Exception("Failed to apply action. Because game is already finished.")
         return game_state, events
 

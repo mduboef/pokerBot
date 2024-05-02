@@ -1,6 +1,7 @@
 import math
 import sys
 
+sys.path.insert(0, './')
 from blackjack.utils import State
 from mcts_player import MCTSPlayer
 sys.path.insert(0, './pypokerengine/api/')
@@ -79,6 +80,32 @@ def parse_arguments():
     return args.agent_name1, args.agent1, args.agent_name2, args.agent2
 
 if __name__ == '__main__':
+	class SearchTree:
+		def __init__(self, player = None, state=None, action=None, visit=0, value=0, parent=None):
+			self.player: str = player    # "main" or "opp"
+			self.action: str = action    # Action by the opponent that was taken in parent
+			self.parent: SearchTree = parent 
+			self.visit: int = visit      # Number of visits
+			self.value: int = value      # Value of node
+			self.children: dict[SearchTree] = {}
+
+			self.state: State = state          # Observation
+			self.valid_actions: list[str] = None
+
+		def expand(self, valid_actions: list[str]):
+			for action in valid_actions:
+				if self.player == "main":
+					player = "opp"
+				else:
+					player = "main"
+
+				self.children[action] = SearchTree(player=player, action=action, parent=self)
+
+		def ucb(self, child):
+			if child.visit == 0:
+				return float('inf')  # Return a very large number to ensure this node gets selected
+			else:
+				return math.sqrt(math.log(self.visit) / child.visit)
 
 	name1, agent1, name2, agent2 = parse_arguments()
 	start = time.time()

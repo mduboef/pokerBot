@@ -6,7 +6,7 @@ import pprint
 
 class RandomPlayer(BasePokerPlayer):
 
-  def __init__(self, uuid):
+  def __init__(self, uuid=None):
     super().__init__()
     self.uuid = uuid
 
