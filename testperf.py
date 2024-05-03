@@ -13,6 +13,8 @@ from raise_player import RaisedPlayer
 from tree_player import TreePlayer
 from stump_player import StumpPlayer
 from evil_player import EvilPlayer
+from smart_player import SmartPlayer
+from jr_evil_player import EvilPlayerJr
 # from smart warrior import SmartWarrior
 """ ========================================================= """
 
@@ -81,7 +83,10 @@ if __name__ == '__main__':
 	#name1, agent1, name2, agent2 = parse_arguments()
 	start = time.time()
 	#testperf(name1, agent1, name2, agent2, 3, 100)
-	testperf("Evil Agent", EvilPlayer(), "Raised Agent", RaisedPlayer(), 10, 1000)
+	# testperf("Raised Agent", RaisedPlayer(), "Raised Agent Jr.", RaisedPlayer(), 20, 10000)
+	testperf("Random Agent", RandomPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
+	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
+	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
 	end = time.time()
 
 	print("\n Time taken to play: %.4f seconds" %(end-start))

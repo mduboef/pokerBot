@@ -24,6 +24,10 @@ def get_single_process(hole, community):
 def convert_known(hole, community):
     return [(SUIT_CONVERSIONS[card[0]], VALUE_CONVERSIONS[card[1:]]) for card in [*hole, *community]]
 
+# Samples and adds with splat operator
+def sortKnown(hole, community):
+    return sorted(convert_known(hole, community), key=lambda x: x[1])
+
 def generateDeckTuple(known):
     deck = []
     for suit in SUIT_RANGE:
@@ -149,13 +153,14 @@ def checkStraight(values):
             return True
     return False
 
-def handDistribution(hole, community, ms_limit):
+def handDistribution(hole, community, ms_limit, max_iters):
     # Track total time taken to run the script
     start = timeit.default_timer()
 
     # Prepare the deck and known cards only once
-    known = convert_known(hole, community)
-    deck = generateDeckTuple(known)
+    # known = convert_known(hole, community)
+    # deck = generateDeckTuple(known)
+    known = sortKnown(hole, community)
 
     # Save results to help calculate averages
     royalFlush = 0
@@ -174,7 +179,7 @@ def handDistribution(hole, community, ms_limit):
 
     # Count the number of loops completed
     iters = 0
-    while True:
+    while iters < max_iters + 1:
         # Track iterations
         iters += 1
     
@@ -183,7 +188,8 @@ def handDistribution(hole, community, ms_limit):
             break
 
         # Get hand for simulation
-        sample = sampleSortDeck(deck, known)
+        # sample = sampleSortDeck(deck, known)
+        sample = known
         suits, values, counts = processCards(sample)
 
         # save repeat operations
@@ -369,8 +375,8 @@ if __name__ == '__main__':
     t = timeit.timeit(lambda: getWinLossTieOdds(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
     print(t)
     print(getWinLossTieOdds(['C6', 'DK'], [], 50, 3000)['WinLossTie'])
-    print(getWinLossTieOdds(['C6', 'DK'], [], 50, 3000)['WinLossTie'])
-    t = timeit.timeit(lambda: getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
-    print(t)
-    print(getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000)['WinLossTie'])
-    print(getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000)['WinLossTie'])
+    print(getWinLossTieOdds(['C6', 'D6'], ['DQ', 'D7', 'S5'], 50, 3000)['WinLossTie'])
+    #t = timeit.timeit(lambda: getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
+    #print(t)
+    #print(getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000)['WinLossTie'])
+    #print(getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000)['WinLossTie'])

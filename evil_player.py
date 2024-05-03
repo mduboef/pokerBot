@@ -24,6 +24,10 @@ class EvilPlayer(BasePokerPlayer):
       if sample <= .75:
         return 'call'
       return 'raise'
+    #if round_state['street'] == 'preflop':
+    #  sample = rand.uniform(0,1)
+    #  if sample >= .75:
+    #    return 'call'
     return 'fold'
 
   def receive_game_start_message(self, game_info):
