@@ -1,13 +1,18 @@
 import timeit
 import random
+from numpy.random import choice
+
 
 SUIT = ['C', 'D', 'H', 'S']
 SUIT_RANGE = [0, 1, 2, 3]
 SUIT_CONVERSIONS = {'C': 0, 'D': 1, 'H': 2, 'S': 3}
 
-VALUE = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+VALUE = ['2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A']
 VALUE_RANGE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-VALUE_CONVERSIONS = {'2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7, '10': 8, 'J': 9, 'Q': 10, 'K': 11, 'A': 12} # Map strings to numbers (Abstraction)
+VALUE_CONVERSIONS = {'2': 0, '3': 1, '4': 2, '5': 3, '6': 4, '7': 5, '8': 6, '9': 7, 'T': 8, 'J': 9, 'Q': 10, 'K': 11, 'A': 12} # Map strings to numbers (Abstraction)
+
+HANDS = ['High', 'Pair', 'Two Pair', 'Three Kind', 'Straight', 'Flush', 'Full House', 'Four Kind', 'Straight Flush', 'Royal Flush']
+
 
 
 def get_single_process(hole, community):
@@ -18,6 +23,10 @@ def get_single_process(hole, community):
 
 def convert_known(hole, community):
     return [(SUIT_CONVERSIONS[card[0]], VALUE_CONVERSIONS[card[1:]]) for card in [*hole, *community]]
+
+# Samples and adds with splat operator
+def sortKnown(hole, community):
+    return sorted(convert_known(hole, community), key=lambda x: x[1])
 
 def generateDeckTuple(known):
     deck = []
@@ -144,13 +153,14 @@ def checkStraight(values):
             return True
     return False
 
-def handDistribution(hole, community, ms_limit):
+def handDistribution(hole, community, ms_limit, max_iters):
     # Track total time taken to run the script
     start = timeit.default_timer()
 
     # Prepare the deck and known cards only once
-    known = convert_known(hole, community)
-    deck = generateDeckTuple(known)
+    # known = convert_known(hole, community)
+    # deck = generateDeckTuple(known)
+    known = sortKnown(hole, community)
 
     # Save results to help calculate averages
     royalFlush = 0
@@ -169,7 +179,7 @@ def handDistribution(hole, community, ms_limit):
 
     # Count the number of loops completed
     iters = 0
-    while True:
+    while iters < max_iters + 1:
         # Track iterations
         iters += 1
     
@@ -178,7 +188,8 @@ def handDistribution(hole, community, ms_limit):
             break
 
         # Get hand for simulation
-        sample = sampleSortDeck(deck, known)
+        # sample = sampleSortDeck(deck, known)
+        sample = known
         suits, values, counts = processCards(sample)
 
         # save repeat operations
@@ -251,6 +262,7 @@ def handDistribution(hole, community, ms_limit):
             high += 1
 
     # Average the results to get a full distribution
+    iters -= 1
     results = {'Royal Flush': royalFlush / iters,
                 'Straight Flush':straightFlush / iters,
                 'Four Kind':fourKind / iters,
@@ -261,13 +273,61 @@ def handDistribution(hole, community, ms_limit):
                 'Two Pair':twoPair / iters,
                 'Pair':pair / iters,
                 'High':high / iters}
-    
     return_obj = {'hole': hole, # Return the hole cards used in the calculation
                     'community': community, # Same with community cards
                     'iterations': iters, # Return iteration count to get how effective it was
                     'with_hole': results}
     
     return return_obj
+
+def getWinLossTieOddsNew(hole, community, ms_limit, iters):
+    handDict = handDistribution(hole, community, ms_limit/2)
+    oppHand = handDistribution(handDict['community'], [], ms_limit/2)
+    oppHandList = [oppHand['with_hole'][key] for key in oppHand['with_hole'].keys()]
+    oppHandList.reverse()
+    playerHandList = [handDict['with_hole'][key] for key in handDict['with_hole'].keys()]
+    playerHandList.reverse()
+    #tempList = [0 for _ in range(len(playerHandList))]
+    #for i in range(len(playerHandList)):
+    #    tempList[i] = sum(playerHandList[0:i+1])
+    #playerHandList = [*tempList]
+    #for i in range(len(oppHandList)):
+    #    tempList[i] = sum(oppHandList[0:i+1])
+    #oppHandList = [*tempList]
+    playerWins = 0
+    playerLosses = 0
+    playerTies = 0
+    for _ in range(iters):
+        playerHand = choice(HANDS, 1, p=playerHandList)
+        oppHand = choice(HANDS, 1, p=oppHandList)
+
+        if HANDS.index(playerHand) > HANDS.index(oppHand):
+            playerWins += 1
+        if HANDS.index(playerHand) < HANDS.index(oppHand):
+            playerLosses += 1
+        if HANDS.index(playerHand) == HANDS.index(oppHand):
+            playerTies += 1
+        #sample = random.uniform(0,1)
+        #playerIndex = 0
+        #oppIndex = 0
+        #while playerHandList[playerIndex] <= sample:
+        #    playerIndex += 1
+        #    if playerIndex >= len(playerHandList):
+        #        break
+        #while oppHandList[oppIndex] <= sample:
+        #    oppIndex += 1
+        #    if oppIndex >= len(oppHandList):
+        #        break
+        #if playerIndex > oppIndex:
+        #    playerWins += 1
+        #if oppIndex > playerIndex:
+        #    playerLosses += 1
+        #if oppIndex == playerIndex:
+        #    playerTies += 1
+
+    toReturn = (playerWins/iters, playerLosses/iters, playerTies/iters)
+    handDict.update({'WinLossTie': toReturn})
+    return handDict
 
 def getWinLossTieOdds(hole, community, ms_limit, iters):
     handDict = handDistribution(hole, community, ms_limit/2)
@@ -309,9 +369,14 @@ def getWinLossTieOdds(hole, community, ms_limit, iters):
     handDict.update({'WinLossTie': toReturn})
     return handDict
 
+
 if __name__ == '__main__':
-    for i in range(1):
-        
-        t = timeit.timeit(lambda: getWinLossTieOdds(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
-        print(t)
-        print(getWinLossTieOdds(['C6', 'DK'], [], 50, 3000))
+    
+    t = timeit.timeit(lambda: getWinLossTieOdds(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
+    print(t)
+    print(getWinLossTieOdds(['C6', 'DK'], [], 50, 3000)['WinLossTie'])
+    print(getWinLossTieOdds(['C6', 'D6'], ['DQ', 'D7', 'S5'], 50, 3000)['WinLossTie'])
+    #t = timeit.timeit(lambda: getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000), number=1, globals=globals())
+    #print(t)
+    #print(getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000)['WinLossTie'])
+    #print(getWinLossTieOddsNew(['C6', 'DK'], [], 50, 3000)['WinLossTie'])

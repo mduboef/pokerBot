@@ -9,7 +9,13 @@ from argparse import ArgumentParser
 
 """ =========== *Remember to import your agent!!! =========== """
 from randomplayer import RandomPlayer
-# from smartwarrior import SmartWarrior
+from raise_player import RaisedPlayer
+from tree_player import TreePlayer
+from stump_player import StumpPlayer
+from evil_player import EvilPlayer
+from smart_player import SmartPlayer
+from jr_evil_player import EvilPlayerJr
+# from smart warrior import SmartWarrior
 """ ========================================================= """
 
 """ Example---To run testperf.py with random warrior AI against itself. 
@@ -17,11 +23,11 @@ from randomplayer import RandomPlayer
 $ python testperf.py -n1 "Random Warrior 1" -a1 RandomPlayer -n2 "Random Warrior 2" -a2 RandomPlayer
 """
 
-def testperf(agent_name1, agent1, agent_name2, agent2):		
+def testperf(agent_name1, agent1, agent_name2, agent2, num_games, max_rounds):
 
 	# Init to play 500 games of 1000 rounds
-	num_game = 500
-	max_round = 1000
+	num_game = num_games
+	max_round = max_rounds
 	initial_stack = 10000
 	smallblind_amount = 20
 
@@ -33,8 +39,8 @@ def testperf(agent_name1, agent1, agent_name2, agent2):
 	config = setup_config(max_round=max_round, initial_stack=initial_stack, small_blind_amount=smallblind_amount)
 	
 	# Register players
-	config.register_player(name=agent_name1, algorithm=RandomPlayer())
-	config.register_player(name=agent_name2, algorithm=RandomPlayer())
+	config.register_player(name=agent_name1, algorithm=agent1)
+	config.register_player(name=agent_name2, algorithm=agent2)
 	# config.register_player(name=agent_name1, algorithm=agent1())
 	# config.register_player(name=agent_name2, algorithm=agent2())
 	
@@ -61,22 +67,26 @@ def testperf(agent_name1, agent1, agent_name2, agent2):
 		print("\n Congratulations! " + agent_name1 + " has won.")
 		# print("\n Random Player has won!")
 	else:
-		Print("\n It's a draw!") 
+		print("\n It's a draw!") 
 
 
 def parse_arguments():
     parser = ArgumentParser()
     parser.add_argument('-n1', '--agent_name1', help="Name of agent 1", default="Your agent", type=str)
-    parser.add_argument('-a1', '--agent1', help="Agent 1", default=RandomPlayer())    
-    parser.add_argument('-n2', '--agent_name2', help="Name of agent 2", default="Your agent", type=str)
-    parser.add_argument('-a2', '--agent2', help="Agent 2", default=RandomPlayer())    
+    parser.add_argument('-a1', '--agent1', help="Agent 1", default=EvilPlayer())
+    parser.add_argument('-n2', '--agent_name2', help="Name of agent 2", default="Other agent", type=str)
+    parser.add_argument('-a2', '--agent2', help="Agent 2", default=RandomPlayer())
     args = parser.parse_args()
     return args.agent_name1, args.agent1, args.agent_name2, args.agent2
 
 if __name__ == '__main__':
-	name1, agent1, name2, agent2 = parse_arguments()
+	#name1, agent1, name2, agent2 = parse_arguments()
 	start = time.time()
-	testperf(name1, agent1, name2, agent2)
+	#testperf(name1, agent1, name2, agent2, 3, 100)
+	# testperf("Raised Agent", RaisedPlayer(), "Raised Agent Jr.", RaisedPlayer(), 20, 10000)
+	testperf("Random Agent", RandomPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
+	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
+	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
 	end = time.time()
 
 	print("\n Time taken to play: %.4f seconds" %(end-start))
