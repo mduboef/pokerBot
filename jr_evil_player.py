@@ -7,7 +7,7 @@ import opponent_action as oa
 ROUND_ENUM = {'preflop': 0, 'flop': 1, 'turn': 2, 'river': 3}
 
 # Checkmate the raise player >:)
-Anti_Raise_Player = {'raise': 0, 'call': 0, 'fold': 0, 'uuid': ''}
+# Anti_Raise_Player = {'raise': 0, 'call': 0, 'fold': 0, 'uuid': ''}
 
 # Random number generator
 class LCG:
@@ -23,19 +23,24 @@ class LCG:
 
 class EvilPlayerJr(BasePokerPlayer):
 
-    def declare_action(self, valid_actions, hole_card, round_state):
-        # WEIGHTS:
-        TRIFOLD_0 = .75
-        TRIFOLD_1 = .2
-        TRIFOLD_2 = .8
-        TRIFOLD_3 = .9
-        
-        BAD_HAND = 1
-        MID_HAND = 7
+    def __init__(self, weights):
+        self.weights = weights
 
-        SUIT_CALL = .5
-        NUMBER_CALL = .5
-        HIGH_CALL = .75
+    def declare_action(self, valid_actions, hole_card, round_state):
+        # WEIGHTS: [0.7349746881706842, 0.5332070044928181, 0.19472274132736855, 0.5015777582483778, 0.37764577190150944, 0.36780737748123626, 0.21218464747220242, 5, 8]
+        TRIFOLD_0 = self.weights[0] # 0 - 1
+        TRIFOLD_1 = self.weights[1] # 0 - 1
+        TRIFOLD_2 = self.weights[2] # 0 - 1
+        TRIFOLD_3 = self.weights[3] # 0 - 1
+
+        # Percentage to call over raise
+        SUIT_CALL = self.weights[4] # 0 ~ 1
+        NUMBER_CALL = self.weights[5] # 0 ~ 1
+        HIGH_CALL = self.weights[6] # 0 ~ 1
+        
+        # 1 - 10, bad is lower
+        BAD_HAND = self.weights[7] # 1 - 10
+        MID_HAND = self.weights[8] # 1 - 10
 
         # Consistent yet random bluff factor for each round
         lcg = LCG(round_state['round_count'])
@@ -56,44 +61,27 @@ class EvilPlayerJr(BasePokerPlayer):
         parsed_history = [x['action'].lower() for x in curr_round if x['action'] == 'RAISE' or x['action'] == 'CALL' or x['action'] == 'FOLD']
         parsed_uuid = [x['uuid'].lower() for x in curr_round]
 
-        # Get new UUID if available
-        if len(curr_round):
-            parsed_uuid = curr_round[-1]['uuid']
-        else:
-            parsed_uuid = Anti_Raise_Player['uuid']
-
-        # Detect new game
-        if Anti_Raise_Player['uuid'] != parsed_uuid:
-            Anti_Raise_Player['raise'] = 0
-            Anti_Raise_Player['call'] = 0
-            Anti_Raise_Player['fold'] = 0
-            Anti_Raise_Player['uuid'] = parsed_uuid
-
-        # Calculate opponent move if known 
-        if len(parsed_history):
-            Anti_Raise_Player[parsed_history[-1]] += 1
-
         # Train sample cuttoffs
         def trifold():
             if do_bluff:
-                return 'raise'
+                return move('raise')
             elif ROUND_NUM == 0:
-                return 'fold' if sample > TRIFOLD_0 else 'call'
+                return 'fold' if sample > TRIFOLD_0 else move('call')
             elif ROUND_NUM == 1:
-                return 'fold' if sample > TRIFOLD_1 else 'call'
+                return 'fold' if sample > TRIFOLD_1 else move('call')
             elif ROUND_NUM == 2:
-                return 'fold' if sample > TRIFOLD_2 else 'call'
+                return 'fold' if sample > TRIFOLD_2 else move('call')
             elif ROUND_NUM == 3:
-                return 'fold' if sample > TRIFOLD_3 else 'call'
+                return 'fold' if sample > TRIFOLD_3 else move('call')
             else:
                 return 'fold'
 
         # Determine which move to make given the desired choice
         def move(move):
+            valid_actions_map = map(lambda x: x['action'], valid_actions)
             if move == 'fold':
                 move = trifold()
-
-            if move in valid_actions:
+            if move in valid_actions_map:
                 return move
             else:
                 return 'call'

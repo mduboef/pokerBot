@@ -12,20 +12,20 @@ class SmartPlayer(BasePokerPlayer):
             # Strong hand, attempt to raise
             action_info = self.find_action(valid_actions, "raise")
             if action_info:
-                print(action_info["action"])
+                #print(action_info["action"])
                 return action_info["action"]
         elif hand_strength > 0.4:
             # Decent hand, attempt to call or check
             action_info = self.find_action(valid_actions, "call")
             if not action_info:
                 action_info = self.find_action(valid_actions, "check")
-            print(action_info["action"])
+            #print(action_info["action"])
             return action_info["action"]
         else:
             # Weak hand, check if possible, otherwise fold
             action_info = self.find_action(valid_actions, "check")
             if not action_info:
-                print("fold")
+                #print("fold")
                 return "fold"
 
         # Default fallback (shouldn't reach here in theory)
