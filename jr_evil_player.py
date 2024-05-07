@@ -27,7 +27,7 @@ class EvilPlayerJr(BasePokerPlayer):
         self.weights = weights
 
     def declare_action(self, valid_actions, hole_card, round_state):
-        # WEIGHTS: [0.7349746881706842, 0.5332070044928181, 0.19472274132736855, 0.5015777582483778, 0.37764577190150944, 0.36780737748123626, 0.21218464747220242, 5, 8]
+        # WEIGHTS: [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 1, 4]
         TRIFOLD_0 = self.weights[0] # 0 - 1
         TRIFOLD_1 = self.weights[1] # 0 - 1
         TRIFOLD_2 = self.weights[2] # 0 - 1

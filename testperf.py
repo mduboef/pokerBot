@@ -29,8 +29,8 @@ def testperf(agent_name1, agent1, agent_name2, agent2, num_games, max_rounds):
 	# Init to play 500 games of 1000 rounds
 	num_game = num_games
 	max_round = max_rounds
-	initial_stack = 10000
-	smallblind_amount = 20
+	initial_stack = 1000
+	smallblind_amount = 10
 
 	# Init pot of players
 	agent1_pot = 0
@@ -87,11 +87,13 @@ if __name__ == '__main__':
 	weights_good = [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 1, 4]
 	weights_new = [0.3060420796952005, 0.7664547714821173, 0.9756685100259848, 0.7221453881090347, 0.8923917436015822, 0.8810826370553613, 0.7652878056675727, 1, 4]
 	
+	weights_good_II =  [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 0, 2]
+
 	# testperf("Old Evil Jr", EvilPlayerJr(weights_good), "Evil Jr.", EvilPlayerJr(weights_new), 30, 20000)
-	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", EvilPlayerJr(weights_new), 30, 20000)
-	testperf("Random Agent", RandomPlayer(), "Evil Jr.", EvilPlayerJr(weights_new), 30, 20000)
-	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", EvilPlayerJr(weights_new), 30, 20000)
-	testperf("Call Agent", CallPlayer(), "Evil Jr.", EvilPlayerJr(weights_new), 30, 20000)
+	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", EvilPlayerJr(weights_good_II), 30, 20000)
+	testperf("Random Agent", RandomPlayer(), "Evil Jr.", EvilPlayerJr(weights_good_II), 30, 20000)
+	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", EvilPlayerJr(weights_good_II), 30, 20000)
+	testperf("Call Agent", CallPlayer(), "Evil Jr.", EvilPlayerJr(weights_good_II), 30, 20000)
 	# testperf("Evil Agent", EvilPlayer(), "Call Agent", CallPlayer(), 30, 20000)
 	# testperf("Raised Agent", RaisedPlayer(), "Call Agent", CallPlayer(), 30, 20000)
 	# testperf("Random Agent", RandomPlayer(), "Call Agent", CallPlayer(), 30, 20000)
