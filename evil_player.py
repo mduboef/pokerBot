@@ -4,8 +4,6 @@ import handprobability as handProb
 import timeit
 import random as rand
 
-#IDEA: Rip off angela's agent and see if it works.
-
 class EvilPlayer(BasePokerPlayer):
 
   def declare_action(self, valid_actions, hole_card, round_state):
@@ -24,10 +22,6 @@ class EvilPlayer(BasePokerPlayer):
       if sample <= .75:
         return 'call'
       return 'raise'
-    #if round_state['street'] == 'preflop':
-    #  sample = rand.uniform(0,1)
-    #  if sample >= .75:
-    #    return 'call'
     return 'fold'
 
   def receive_game_start_message(self, game_info):

@@ -90,17 +90,11 @@ if __name__ == '__main__':
 	
 	weights_good_II =  [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 0, 2]
 
-	# testperf("Old Evil Jr", EvilPlayerJr(weights_good), "Evil Jr.", EvilPlayerJr(weights_new), 30, 20000)
-	
 	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
 	testperf("Random Agent", RandomPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
 	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
 	testperf("Call Agent", CallPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
 	testperf("Smart Agent", SmartPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
-
-	# testperf("Evil Agent", EvilPlayer(), "Call Agent", CallPlayer(), 30, 20000)
-	# testperf("Raised Agent", RaisedPlayer(), "Call Agent", CallPlayer(), 30, 20000)
-	# testperf("Random Agent", RandomPlayer(), "Call Agent", CallPlayer(), 30, 20000)
 	end = time.time()
 
 	print("\n Time taken to play: %.4f seconds" %(end-start))

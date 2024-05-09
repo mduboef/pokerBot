@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from evil_player import EvilPlayer
 from raise_player import RaisedPlayer
 from random_player import RandomPlayer
-from Group11Player import Group11Player
+from Group11PlayerUntrained import Group11Player
 from call_player import CallPlayer
 import random as rand
 import matplotlib.pyplot as plt
