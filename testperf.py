@@ -8,13 +8,14 @@ from argparse import ArgumentParser
 
 
 """ =========== *Remember to import your agent!!! =========== """
-from randomplayer import RandomPlayer
+from random_player import RandomPlayer
 from raise_player import RaisedPlayer
 from tree_player import TreePlayer
 from stump_player import StumpPlayer
 from evil_player import EvilPlayer
 from smart_player import SmartPlayer
-from jr_evil_player import EvilPlayerJr
+from Group11Player import Group11Player
+from call_player import CallPlayer
 # from smart warrior import SmartWarrior
 """ ========================================================= """
 
@@ -28,8 +29,8 @@ def testperf(agent_name1, agent1, agent_name2, agent2, num_games, max_rounds):
 	# Init to play 500 games of 1000 rounds
 	num_game = num_games
 	max_round = max_rounds
-	initial_stack = 10000
-	smallblind_amount = 20
+	initial_stack = 1000
+	smallblind_amount = 10
 
 	# Init pot of players
 	agent1_pot = 0
@@ -46,8 +47,9 @@ def testperf(agent_name1, agent1, agent_name2, agent2, num_games, max_rounds):
 	
 
 	# Start playing num_game games
+	print("\n---------------------------------------\n")
 	for game in range(1, num_game+1):
-		print("Game number: ", game)
+		# print("Game number: ", game)
 		game_result = start_poker(config, verbose=0)
 		agent1_pot = agent1_pot + game_result['players'][0]['stack']
 		agent2_pot = agent2_pot + game_result['players'][1]['stack']
@@ -83,10 +85,22 @@ if __name__ == '__main__':
 	#name1, agent1, name2, agent2 = parse_arguments()
 	start = time.time()
 	#testperf(name1, agent1, name2, agent2, 3, 100)
-	# testperf("Raised Agent", RaisedPlayer(), "Raised Agent Jr.", RaisedPlayer(), 20, 10000)
-	testperf("Random Agent", RandomPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
-	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
-	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", EvilPlayerJr(), 30, 20000)
+	weights_good = [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 1, 4]
+	weights_new = [0.3060420796952005, 0.7664547714821173, 0.9756685100259848, 0.7221453881090347, 0.8923917436015822, 0.8810826370553613, 0.7652878056675727, 1, 4]
+	
+	weights_good_II =  [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 0, 2]
+
+	# testperf("Old Evil Jr", EvilPlayerJr(weights_good), "Evil Jr.", EvilPlayerJr(weights_new), 30, 20000)
+	
+	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
+	testperf("Random Agent", RandomPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
+	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
+	testperf("Call Agent", CallPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
+	testperf("Smart Agent", SmartPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
+
+	# testperf("Evil Agent", EvilPlayer(), "Call Agent", CallPlayer(), 30, 20000)
+	# testperf("Raised Agent", RaisedPlayer(), "Call Agent", CallPlayer(), 30, 20000)
+	# testperf("Random Agent", RandomPlayer(), "Call Agent", CallPlayer(), 30, 20000)
 	end = time.time()
 
 	print("\n Time taken to play: %.4f seconds" %(end-start))
