@@ -41,10 +41,7 @@ def testperf(agent_name1, agent1, agent_name2, agent2, num_games, max_rounds):
 	
 	# Register players
 	config.register_player(name=agent_name1, algorithm=agent1)
-	config.register_player(name=agent_name2, algorithm=agent2)
-	# config.register_player(name=agent_name1, algorithm=agent1())
-	# config.register_player(name=agent_name2, algorithm=agent2())
-	
+	config.register_player(name=agent_name2, algorithm=agent2)	
 
 	# Start playing num_game games
 	print("\n---------------------------------------\n")
@@ -55,19 +52,13 @@ def testperf(agent_name1, agent1, agent_name2, agent2, num_games, max_rounds):
 		agent2_pot = agent2_pot + game_result['players'][1]['stack']
 
 	print("\n After playing {} games of {} rounds, the results are: ".format(num_game, max_round))
-	# print("\n Agent 1's final pot: ", agent1_pot)
 	print("\n " + agent_name1 + "'s final pot: ", agent1_pot)
 	print("\n " + agent_name2 + "'s final pot: ", agent2_pot)
-
-	# print("\n ", game_result)
-	# print("\n Random player's final stack: ", game_result['players'][0]['stack'])
-	# print("\n " + agent_name + "'s final stack: ", game_result['players'][1]['stack'])
 
 	if (agent1_pot<agent2_pot):
 		print("\n Congratulations! " + agent_name2 + " has won.")
 	elif(agent1_pot>agent2_pot):
 		print("\n Congratulations! " + agent_name1 + " has won.")
-		# print("\n Random Player has won!")
 	else:
 		print("\n It's a draw!") 
 
@@ -82,11 +73,7 @@ def parse_arguments():
     return args.agent_name1, args.agent1, args.agent_name2, args.agent2
 
 if __name__ == '__main__':
-	#name1, agent1, name2, agent2 = parse_arguments()
 	start = time.time()
-	#testperf(name1, agent1, name2, agent2, 3, 100)
-	weights_good = [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 1, 4]
-	weights_new = [0.3060420796952005, 0.7664547714821173, 0.9756685100259848, 0.7221453881090347, 0.8923917436015822, 0.8810826370553613, 0.7652878056675727, 1, 4]
 	
 	weights_good_II =  [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 0, 2]
 
