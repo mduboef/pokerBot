@@ -92,11 +92,11 @@ if __name__ == '__main__':
 
 	# testperf("Old Evil Jr", EvilPlayerJr(weights_good), "Evil Jr.", EvilPlayerJr(weights_new), 30, 20000)
 	
-	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
-	testperf("Random Agent", RandomPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
-	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
-	testperf("Call Agent", CallPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
-	testperf("Smart Agent", SmartPlayer(), "Evil Jr.", Group11Player(weights_good_II), 60, 20000)
+	testperf("Raised Agent", RaisedPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
+	testperf("Random Agent", RandomPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
+	testperf("Evil Agent", EvilPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
+	testperf("Call Agent", CallPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
+	testperf("Smart Agent", SmartPlayer(), "Evil Jr.", Group11Player(), 60, 20000)
 
 	# testperf("Evil Agent", EvilPlayer(), "Call Agent", CallPlayer(), 30, 20000)
 	# testperf("Raised Agent", RaisedPlayer(), "Call Agent", CallPlayer(), 30, 20000)

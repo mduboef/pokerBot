@@ -7,24 +7,24 @@ ROUND_ENUM = {'preflop': 0, 'flop': 1, 'turn': 2, 'river': 3}
 
 class Group11Player(BasePokerPlayer):
 
+    def __init__(self, weights):
+        self.weights = weights
+
     def declare_action(self, valid_actions, hole_card, round_state):
-
-        weights = [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 0, 2]
-
         # WEIGHTS:
-        TRIFOLD_0 = weights[0] # 0 - 1
-        TRIFOLD_1 = weights[1] # 0 - 1
-        TRIFOLD_2 = weights[2] # 0 - 1
-        TRIFOLD_3 = weights[3] # 0 - 1
+        TRIFOLD_0 = self.weights[0] # 0 - 1
+        TRIFOLD_1 = self.weights[1] # 0 - 1
+        TRIFOLD_2 = self.weights[2] # 0 - 1
+        TRIFOLD_3 = self.weights[3] # 0 - 1
 
         # Percentage to call over raise
-        SUIT_CALL = weights[4] # 0 ~ 1
-        NUMBER_CALL = weights[5] # 0 ~ 1
-        HIGH_CALL = weights[6] # 0 ~ 1
+        SUIT_CALL = self.weights[4] # 0 ~ 1
+        NUMBER_CALL = self.weights[5] # 0 ~ 1
+        HIGH_CALL = self.weights[6] # 0 ~ 1
         
         # 1 - 10, bad is lower
-        BAD_HAND = weights[7] # 1 - 10
-        MID_HAND = weights[8] # 1 - 10
+        BAD_HAND = self.weights[7] # 1 - 10
+        MID_HAND = self.weights[8] # 1 - 10
 
         ROUND_NUM = ROUND_ENUM[round_state['street']]
 
