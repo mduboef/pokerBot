@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from evil_player import EvilPlayer
 from raise_player import RaisedPlayer
 from random_player import RandomPlayer
-from jr_evil_player import EvilPlayerJr
+from Group11Player import Group11Player
 from call_player import CallPlayer
 import random as rand
 import matplotlib.pyplot as plt
@@ -107,7 +107,7 @@ class trainEvilJr():
 
         # print(random_weights)
 
-        random_trained_expert = EvilPlayerJr(random_weights)
+        random_trained_expert = Group11Player(random_weights)
         experts = [*known_experts, random_trained_expert]
 
         for i in range(iters):
@@ -115,7 +115,7 @@ class trainEvilJr():
             expert = rand.choice(experts[:3])
             # expert = experts[0]
             override_rate = self.update_random_weight()
-            new_agent = EvilPlayerJr(self.weights)
+            new_agent = Group11Player(self.weights)
             if rand.uniform(0, 1) < override_rate:
                 experts[len(experts) - 1] = new_agent
             else:
@@ -138,7 +138,7 @@ def play_game(you, enemy):
 def train_hand_cutoffs(weights, iters):
     win_rate_matrix = [[], [], [], [], [], [], [], [], [], []]
     known_experts = [EvilPlayer(), RaisedPlayer(), CallPlayer()]
-    trained_expert = EvilPlayerJr(weights)
+    trained_expert = Group11Player(weights)
     experts = [*known_experts, trained_expert]
 
     best_i = trained_expert.weights[7]
@@ -152,7 +152,7 @@ def train_hand_cutoffs(weights, iters):
                 new_weights[7] = i
                 new_weights[8] = j
                 print(new_weights)
-                new_expert = EvilPlayerJr(new_weights)
+                new_expert = Group11Player(new_weights)
                 win_rate = 0
                 for _ in range(iters):
                     expert = rand.choice(experts[:3])

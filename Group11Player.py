@@ -1,33 +1,17 @@
 from pypokerengine.players import BasePokerPlayer
 import handprobability as handProb
 import random as rand
-import opponent_action as oa
 
 # IDEA: Rip off angela's agent and see if it works.
 ROUND_ENUM = {'preflop': 0, 'flop': 1, 'turn': 2, 'river': 3}
 
-# Checkmate the raise player >:)
-# Anti_Raise_Player = {'raise': 0, 'call': 0, 'fold': 0, 'uuid': ''}
-
-# Random number generator
-class LCG:
-    def __init__(self, seed):
-        self.seed = seed
-        self.a = 1103515245
-        self.c = 12345
-        self.m = 2**32
-
-    def next(self):
-        self.seed = (self.a * self.seed + self.c) % self.m
-        return self.seed / self.m
-
-class EvilPlayerJr(BasePokerPlayer):
+class Group11Player(BasePokerPlayer):
 
     def __init__(self, weights):
         self.weights = weights
 
     def declare_action(self, valid_actions, hole_card, round_state):
-        # WEIGHTS: [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 1, 4]
+        # WEIGHTS:
         TRIFOLD_0 = self.weights[0] # 0 - 1
         TRIFOLD_1 = self.weights[1] # 0 - 1
         TRIFOLD_2 = self.weights[2] # 0 - 1
@@ -42,30 +26,13 @@ class EvilPlayerJr(BasePokerPlayer):
         BAD_HAND = self.weights[7] # 1 - 10
         MID_HAND = self.weights[8] # 1 - 10
 
-        # Consistent yet random bluff factor for each round
-        lcg = LCG(round_state['round_count'])
-
-        # Trainable bluff factor (DO NOT TRAIN)
-        threshold = .00
-        do_bluff = lcg.next() <= threshold
-
-        ROUND = round_state['street']
         ROUND_NUM = ROUND_ENUM[round_state['street']]
 
         sample = rand.uniform(0,1)
 
-        # Detect Raise
-        parsed_history = []
-        action_histories = round_state['action_histories']
-        curr_round = action_histories[ROUND]
-        parsed_history = [x['action'].lower() for x in curr_round if x['action'] == 'RAISE' or x['action'] == 'CALL' or x['action'] == 'FOLD']
-        parsed_uuid = [x['uuid'].lower() for x in curr_round]
-
         # Train sample cuttoffs
         def trifold():
-            if do_bluff:
-                return move('raise')
-            elif ROUND_NUM == 0:
+            if ROUND_NUM == 0:
                 return 'fold' if sample > TRIFOLD_0 else move('call')
             elif ROUND_NUM == 1:
                 return 'fold' if sample > TRIFOLD_1 else move('call')
@@ -142,4 +109,4 @@ class EvilPlayerJr(BasePokerPlayer):
         pass
 
 def setup_ai():
-  return EvilPlayerJr()
+  return Group11Player()
