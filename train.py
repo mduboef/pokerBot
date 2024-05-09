@@ -57,10 +57,7 @@ class trainEvilJr():
             modification = rand.uniform(-self.update_rate, self.update_rate)
             modification *= self.fade_rate**self.runs[chosen_weight]
             new_value = init_value + modification
-            # print("NEW_VALUE = ", new_value)
             new_value = max(min(new_value, 1), 0)
-            # new_value = abs(new_value % 1)
-            # print("NEW_VALUE = ", new_value)
         else:
             if rand.uniform(-1, 1) < 0:
                 new_value = init_value + 1
@@ -100,12 +97,9 @@ class trainEvilJr():
         return your_pot > enemy_pot
 
     def train(self, iters):
-        # known_good_weights = [0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 1, 4]
         known_experts = [EvilPlayer(), RaisedPlayer(), CallPlayer()]
         random_weights = [*[rand.uniform(0, 1) for x in range(7)], rand.randint(0, 8)]
         random_weights.append(rand.randint(random_weights[7] + 1, 9))
-
-        # print(random_weights)
 
         random_trained_expert = Group11Player(random_weights)
         experts = [*known_experts, random_trained_expert]
@@ -113,7 +107,6 @@ class trainEvilJr():
         for i in range(iters):
             print(i)
             expert = rand.choice(experts[:3])
-            # expert = experts[0]
             override_rate = self.update_random_weight()
             new_agent = Group11Player(self.weights)
             if rand.uniform(0, 1) < override_rate:
@@ -188,5 +181,3 @@ if __name__ == '__main__':
     professor = trainEvilJr()
     best_i, best_j, data = train_hand_cutoffs([0.3281547950071396, 0.8747720058096283, 0.5847482152699021, 0.7214578804204361, 0.012928631272851085, 0.5746492140001189, 0.4095508933413212, 1, 4], 100)
     plot_hand_cutoffs(best_i, best_j, data)
-    #professor.train(5000)
-    #print(professor.weights)
